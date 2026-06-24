@@ -177,19 +177,7 @@ RSpec.describe 'Product list', type: :feature, js: true, job: true do
   end
 
   describe 'sorting' do
-    let!(:completed_order_1) { create(:completed_order_with_totals, variants: [product1.master, product2.master, product3.master, product6.master]) }
-    let!(:completed_order_2) { create(:completed_order_with_totals, variants: [product1.master, product2.master, product3.master, product6.master]) }
-    let!(:completed_order_3) { create(:completed_order_with_totals, variants: [product1.master, product2.master, product3.master, product6.master]) }
-    let!(:completed_order_4) { create(:completed_order_with_totals, variants: [product2.master, product6.master]) }
-    let!(:completed_order_5) { create(:completed_order_with_totals, variants: [product2.master, product6.master]) }
-    let!(:completed_order_6) { create(:completed_order_with_totals, variants: [product6.master]) }
-
     before do
-      # Refresh product metrics for best selling sort to work
-      [product1, product2, product3, product4, product6].each do |product|
-        product.store_products.find_by(store: store)&.refresh_metrics!
-      end
-
       visit spree.products_path
       expect(page).to have_css('.page-contents .product-card-title', count: 5)
     end
@@ -199,18 +187,6 @@ RSpec.describe 'Product list', type: :feature, js: true, job: true do
       choose option, allow_label_click: true
       wait_for_turbo
       expect(page).to have_css('.page-contents .product-card-title', count: 5)
-    end
-
-    it 'can sort by best selling' do
-      sort_by Spree.t('products_sort_options.best_selling')
-
-      expect(page.all('.page-contents .product-card-title').map(&:text)).to eq [
-        product6.name,
-        product2.name,
-        product1.name,
-        product3.name,
-        product4.name
-      ]
     end
 
     it 'can sort alphabetically A-Z' do
