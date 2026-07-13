@@ -1,20 +1,88 @@
-# Instrukcja integracji edytora z `pawelekbyra/sklepik`
+# Integracja edytora z `pawelekbyra/sklepik`
 
-> Dokument opisuje jak dokończyć rozwój tego edytora (`pawelekbyra/edytor-sklepu`) i podłączyć go
-> do głównego repo `pawelekbyra/sklepik`.
+Dokument opisuje docelowe połączenie repozytorium `pawelekbyra/edytor-sklepu` z backendem i
+panelem administracyjnym `pawelekbyra/sklepik` oraz storefrontem `pawelekbyra/sklepikFront`.
 
-## Status obecny (main branch)
+To jest plan techniczny. Integracja nie działa jeszcze w aktualnym kodzie.
 
-- ✅ Etapy 1–3: TypeScript monorepo scaffold, `packages/schema` z testami (13 ✓), dokumentacja PL
-- ⏳ Etapy 4–12: Do zrobienia
-- ❌ Spree Rails usunięty — to jest czysty TypeScript edytor
+## Stan obecny
 
-## Etapy do dokończenia
+### Gotowe w `edytor-sklepu`
 
-### Etap 4: Persistence i wersjonowanie
-**Pakiet:** `packages/persistence`
+- monorepo pnpm i konfiguracja TypeScript,
+- `packages/schema` ze schematami Zod i typami,
+- 16 kanonicznych typów sekcji,
+- testy schematów,
+- dokumentacja architektury i macierz zgodności.
 
-**Interfejsy** (`src/repositories/`):
+### Jeszcze niegotowe
+
+- `packages/editor-core`,
+- `packages/persistence`,
+- `packages/component-library`,
+- `packages/renderer`,
+- aplikacja Next.js w `apps/editor`,
+- persistence, draft/publish i historia,
+- API stron i motywów w `sklepik`,
+- renderowanie dokumentów w `sklepikFront`.
+
+Railsowy storefront i `spree_page_builder` zostały usunięte z tego repo. TypeScript jest jedyną
+aktywną implementacją, ale właściwy wizualny edytor nie został jeszcze ukończony.
+
+## Zasada integracji
+
+System powinien mieć trzy wyraźne warstwy:
+
+```text
+edytor-sklepu
+  → UI edytora, model dokumentu, komendy, renderer i adaptery API
+
+sklepik
+  → Rails/Spree: persistence, autoryzacja, store scope, media i Admin/Store API
+
+sklepikFront
+  → Next.js: pobiera opublikowaną wersję i renderuje ją dla klienta
+```
+
+Najważniejsze zasady:
+
+1. `sklepik` pozostaje źródłem prawdy dla danych produkcyjnych.
+2. `edytor-sklepu` nie uruchamia drugiego serwera commerce.
+3. Adapter API implementujący interfejsy repozytoriów znajduje się w `edytor-sklepu`.
+4. Backend Rails udostępnia zasoby stron, wersji, motywów i mediów.
+5. Preview edytora i storefront używają tego samego `packages/renderer`.
+6. Storefront pobiera wyłącznie wersje opublikowane; drafty są dostępne tylko po autoryzacji preview.
+
+## Kolejność realizacji
+
+### Etap A — pionowy scenariusz lokalny
+
+Najpierw należy uruchomić minimalny przepływ bez integracji produkcyjnej:
+
+```text
+utworzenie strony
+→ dodanie sekcji hero/rich_text/product_grid
+→ zapis draftu w SQLite
+→ preview
+→ publikacja
+→ ponowne otwarcie opublikowanej wersji
+```
+
+Zakres:
+
+- `packages/editor-core`,
+- `packages/persistence` z SQLite,
+- `packages/component-library` z 3 sekcjami,
+- `packages/renderer`,
+- minimalne `apps/editor`,
+- test integracyjny i Playwright.
+
+Dopiero po działającym pionowym scenariuszu warto dodawać wszystkie pozostałe typy sekcji.
+
+### Etap B — persistence i wersjonowanie
+
+Planowane interfejsy:
+
 ```ts
 export interface PageRepository {
   create(storeId: string, page: Page): Promise<Page>;
@@ -25,8 +93,13 @@ export interface PageRepository {
 }
 
 export interface VersionRepository {
-  saveDraft(storeId: string, pageId: string, document: PageDocument): Promise<PageVersion>;
-  publish(storeId: string, pageId: string): Promise<PageVersion>; // transakcja
+  saveDraft(
+    storeId: string,
+    pageId: string,
+    document: PageDocument,
+  ): Promise<PageVersion>;
+
+  publish(storeId: string, pageId: string): Promise<PageVersion>;
   getVersion(storeId: string, versionId: string): Promise<PageVersion>;
   listVersions(storeId: string, pageId: string): Promise<PageVersion[]>;
 }
@@ -49,231 +122,216 @@ export interface MediaRepository {
 export interface CommerceProvider {
   getProducts(storeId: string): Promise<Product[]>;
   getCategories(storeId: string): Promise<Category[]>;
-  getUser(storeId: string, userId: string): Promise<User | null>;
 }
 ```
 
-**Implementacja demo:** `better-sqlite3`, `.data/editor.db`
+Implementacje:
 
-**Testy:** Vitest integracyjne (CRUD, transakcje, izolacja)
+- `SQLite*Repository` — lokalny development i testy,
+- `Sklepik*Repository` — klient Admin API `sklepik`,
+- `SklepikCommerceProvider` — klient Store/Admin API produktów i kategorii.
 
-### Etap 5: Renderer komponentów
-**Pakiet:** `packages/renderer`
+`apps/editor` zna wyłącznie interfejsy. Konkretny zestaw adapterów jest przekazywany przy
+inicjalizacji aplikacji.
 
-- Rejestr `registerSection(type, Component)`
-- `renderPage(page, { mode, storeId })`
-- `renderSection(section, { mode })`
-- Style helpers: `sectionStyles()`, `blockStyles()`
+## Backend w `pawelekbyra/sklepik`
 
-### Etap 6: Canvas i drag&drop
-**Pakiet:** `apps/editor`
+`sklepik` jest monorepo Rails/Spree, dlatego nie należy dodawać do niego fikcyjnej struktury
+`src/api` ani osobnego serwera persistence w TypeScript.
 
-- `@dnd-kit/core` do sekcji/bloków
-- `MoveSectionCommand`, `MoveBlockCommand` z undo/redo
-- Preview live w iframe
+Docelowy kształt może wyglądać następująco:
 
-### Etap 7: Panel właściwości
-**Pakiet:** `apps/editor`
+```text
+spree/core/
+├── app/models/spree/editor_page.rb
+├── app/models/spree/editor_page_version.rb
+├── app/models/spree/editor_theme.rb
+└── db/migrate/...
 
-- Generowanie formularzy ze schematów Zod (`packages/schema`)
-- `UpdateSectionCommand`, `UpdateBlockCommand`
+spree/api/
+├── app/controllers/spree/api/v3/admin/editor_pages_controller.rb
+├── app/controllers/spree/api/v3/admin/editor_themes_controller.rb
+├── app/controllers/spree/api/v3/admin/editor_media_controller.rb
+├── app/controllers/spree/api/v3/store/editor_pages_controller.rb
+└── app/serializers/spree/api/v3/...
 
-### Etap 8: Live preview
-**Pakiet:** `apps/editor`
+packages/admin-sdk/
+└── zasoby pages/themes/versions/media
 
-- Renderowanie przez `packages/renderer`
-- Tryb edycji (overlay "kliknij by edytować")
-
-### Etap 9: Draft/publish i historia
-**Pakiet:** `apps/editor`
-
-- Przycisk "Publikuj" → `PublishPageCommand`
-- Panel historii → `VersionRepository.listVersions()`
-
-### Etap 10: Media
-**Pakiet:** `apps/editor`
-
-- Upload → `MediaRepository.upload()`
-- Wybór → modal z listą
-
-### Etap 11: Motywy
-**Pakiet:** `apps/editor`
-
-- Zarządzanie wieloma motywami
-- Sekcje layoutu (header/footer) na poziomie motywu
-- Publikacja motywu
-
-### Etap 12: Pełna zgodność funkcjonalna
-- Przegląd `docs/MACIERZ_ZGODNOSCI.md`
-- Wszystkie wiersze powinny mieć status `przetestowane`
-- E2E testy przez Playwright
-
----
-
-## Integracja z `pawelekbyra/sklepik`
-
-### 1. Interfejs kompatybilny
-
-Gdy `packages/persistence` będzie gotowe, interfejsy pozostają te same:
-```ts
-export interface PageRepository { /* ... */ }
+packages/dashboard/
+└── trasa lub osadzenie aplikacji edytora
 ```
 
-W `sklepik` implementujesz tę samą strukturę jako klient API zamiast SQLite:
-```ts
-// packages/persistence/src/sklepik/SklepikPageRepository.ts
-import { PageRepository } from '../repositories/PageRepository';
+Nazwy modeli i tras są propozycją. Przed implementacją należy sprawdzić konwencje istniejącego
+Admin API v3, serializerów, autoryzacji i generowania typów w `sklepik`.
 
+## Store scope i autoryzacja
+
+Admin API `sklepik` rozwiązuje aktywny sklep z kontekstu panelu, między innymi przez
+`X-Spree-Store-Id`. Endpointy edytora powinny korzystać z `current_store`, a nie ufać dowolnemu
+`storeId` przesłanemu w body.
+
+Każde zapytanie musi być ograniczone do aktywnego sklepu:
+
+- strony,
+- wersje,
+- motywy,
+- media,
+- powiązania z produktami i kategoriami.
+
+Store API może zwracać wyłącznie opublikowaną wersję strony należącą do sklepu rozwiązanego przez
+host/publishable key. Drafty i historia nie mogą być publicznie dostępne.
+
+## Proponowany kontrakt API
+
+Poniższe ścieżki są propozycją do dopasowania do konwencji `sklepik`.
+
+### Admin API
+
+```text
+GET    /api/v3/admin/editor/pages
+POST   /api/v3/admin/editor/pages
+GET    /api/v3/admin/editor/pages/:id
+PATCH  /api/v3/admin/editor/pages/:id
+DELETE /api/v3/admin/editor/pages/:id
+
+POST   /api/v3/admin/editor/pages/:id/draft
+POST   /api/v3/admin/editor/pages/:id/publish
+GET    /api/v3/admin/editor/pages/:id/versions
+GET    /api/v3/admin/editor/versions/:id
+
+GET    /api/v3/admin/editor/themes
+POST   /api/v3/admin/editor/themes
+GET    /api/v3/admin/editor/themes/:id
+PATCH  /api/v3/admin/editor/themes/:id
+DELETE /api/v3/admin/editor/themes/:id
+POST   /api/v3/admin/editor/themes/:id/set_default
+
+GET    /api/v3/admin/editor/media
+POST   /api/v3/admin/editor/media
+DELETE /api/v3/admin/editor/media/:id
+```
+
+### Store API
+
+```text
+GET /api/v3/store/editor/pages/:slug
+GET /api/v3/store/editor/theme
+```
+
+Store API powinno zwracać gotowy dokument opublikowanej wersji wraz z identyfikatorem wersji lub
+ETag potrzebnym do cache i rewalidacji.
+
+## Adapter API w `edytor-sklepu`
+
+Adapter produkcyjny należy umieścić w planowanym `packages/persistence`, na przykład:
+
+```text
+packages/persistence/src/
+├── repositories/
+│   ├── PageRepository.ts
+│   ├── VersionRepository.ts
+│   ├── ThemeRepository.ts
+│   └── MediaRepository.ts
+├── sqlite/
+│   └── ...
+└── sklepik/
+    ├── SklepikPageRepository.ts
+    ├── SklepikVersionRepository.ts
+    ├── SklepikThemeRepository.ts
+    ├── SklepikMediaRepository.ts
+    └── SklepikCommerceProvider.ts
+```
+
+Przykład:
+
+```ts
 export class SklepikPageRepository implements PageRepository {
-  constructor(private apiClient: SklepikAPI) {}
-  
-  async create(storeId: string, page: Page): Promise<Page> {
-    return this.apiClient.post(`/stores/${storeId}/pages`, page);
-  }
-  // ... itd
-}
-```
+  constructor(private api: SklepikAdminApi) {}
 
-### 2. Warstwa abstrakcji
-
-W `apps/editor` odwołujesz się **tylko** do interfejsów:
-```ts
-import type { PageRepository, VersionRepository } from '@editor/persistence';
-
-export class EditorStore {
-  constructor(
-    private pages: PageRepository,
-    private versions: VersionRepository
-  ) {}
-}
-```
-
-Implementację (SQLite vs. API) podajesz przy inicjalizacji:
-```ts
-// W demo: SQLite
-const store = new EditorStore(
-  new SQLitePageRepository(),
-  new SQLiteVersionRepository()
-);
-
-// W sklepik: API
-const store = new EditorStore(
-  new SklepikPageRepository(apiClient),
-  new SklepikVersionRepository(apiClient)
-);
-```
-
-### 3. API contract dla `sklepik`
-
-Edytor wymagam tych endpointów:
-
-```
-POST   /stores/{storeId}/pages
-GET    /stores/{storeId}/pages
-GET    /stores/{storeId}/pages/{pageId}
-PUT    /stores/{storeId}/pages/{pageId}
-DELETE /stores/{storeId}/pages/{pageId}
-
-POST   /stores/{storeId}/pages/{pageId}/versions
-GET    /stores/{storeId}/pages/{pageId}/versions
-GET    /stores/{storeId}/versions/{versionId}
-
-POST   /stores/{storeId}/themes
-GET    /stores/{storeId}/themes
-GET    /stores/{storeId}/themes/{themeId}
-PUT    /stores/{storeId}/themes/{themeId}
-DELETE /stores/{storeId}/themes/{themeId}
-PUT    /stores/{storeId}/themes/{themeId}/set-default
-
-POST   /stores/{storeId}/media (multipart)
-DELETE /stores/{storeId}/media/{mediaId}
-GET    /stores/{storeId}/media
-
-GET    /stores/{storeId}/products
-GET    /stores/{storeId}/categories
-GET    /stores/{storeId}/users/{userId}
-```
-
-### 4. Repozytorium `sklepik`
-
-W `pawelekbyra/sklepik`:
-```
-src/
-├── api/
-│   ├── pages/
-│   ├── themes/
-│   ├── versions/
-│   └── media/
-└── persistence/
-    └── sklepik/
-        ├── SklepikPageRepository.ts
-        ├── SklepikThemeRepository.ts
-        ├── SklepikVersionRepository.ts
-        ├── SklepikMediaRepository.ts
-        └── SklepikCommerceProvider.ts
-```
-
-### 5. Instalacja edytora jako npm zależność
-
-W `sklepik` `package.json`:
-```json
-{
-  "dependencies": {
-    "@editor/schema": "workspace:*",
-    "@editor/editor-core": "workspace:*",
-    "@editor/persistence": "workspace:*",
-    "@editor/renderer": "workspace:*",
-    "@editor/component-library": "workspace:*"
+  async read(_storeId: string, pageId: string): Promise<Page | null> {
+    return this.api.get(`/api/v3/admin/editor/pages/${pageId}`);
   }
 }
 ```
 
-Albo (jeśli osobne repo):
-```json
-{
-  "dependencies": {
-    "@editor/persistence": "github:pawelekbyra/edytor-sklepu#main"
-  }
+`storeId` pozostaje częścią interfejsu dla izolacji i implementacji demo, ale adapter produkcyjny
+powinien ustawiać zatwierdzony kontekst sklepu w nagłówku klienta API.
+
+## Integracja z panelem administracyjnym
+
+Możliwe warianty:
+
+1. `apps/editor` jako osobna aplikacja Vercel otwierana z dashboardu,
+2. osadzenie przez chronioną trasę/iframe,
+3. późniejsze wydzielenie komponentów UI i montowanie ich bezpośrednio w `packages/dashboard`.
+
+Na start najprostsza jest osobna aplikacja korzystająca z tego samego JWT/proxy lub bezpiecznej,
+krótkotrwałej sesji edytora. Nie należy przekazywać trwałych tokenów w query stringu.
+
+## Integracja ze `sklepikFront`
+
+Storefront pobiera opublikowany dokument z Store API i renderuje go przez wspólny renderer:
+
+```tsx
+import { renderPage } from "@sklepik/editor-renderer";
+
+export default async function CustomPage({ params }: PageProps) {
+  const { slug } = await params;
+  const publishedPage = await getPublishedEditorPage(slug);
+
+  return renderPage(publishedPage.document, {
+    mode: "live",
+    storeId: publishedPage.storeId,
+  });
 }
 ```
 
-### 6. Next.js storefront
+Produkty i kategorie w sekcjach dynamicznych są pobierane przez adapter commerce/storefrontu, a nie
+zapisywane jako pełne kopie danych produktu w dokumencie strony.
 
-Gdy będziesz budować Next.js storefront do `sklepik`:
-```ts
-import { renderPage } from '@editor/renderer';
+Publikacja powinna uruchamiać webhook lub tag-based revalidation w `sklepikFront`.
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const page = await pageRepository.read(storeId, params.slug);
-  const version = await versionRepository.getVersion(storeId, page.publishedVersionId);
-  
-  return renderPage(version.document, { mode: 'live', storeId });
-}
-```
+## Dystrybucja pakietów
 
----
+`workspace:*` działa tylko wewnątrz jednego workspace. Ponieważ `edytor-sklepu`, `sklepik` i
+`sklepikFront` są osobnymi repozytoriami, produkcyjna integracja wymaga wersjonowanych pakietów.
 
-## Checklistę do etapu 13 (gdy będzie pełna zgodność)
+Preferowany kierunek:
 
-- [ ] Etap 4: `packages/persistence` + testy ✓
-- [ ] Etap 5: `packages/renderer` + testy ✓
-- [ ] Etap 6: Canvas w `apps/editor` + testy ✓
-- [ ] Etap 7: Panel właściwości + testy ✓
-- [ ] Etap 8: Live preview + testy ✓
-- [ ] Etap 9: Draft/publish + historia + testy ✓
-- [ ] Etap 10: Media upload + testy ✓
-- [ ] Etap 11: Motywy + testy ✓
-- [ ] Etap 12: Wszystkie wiersze `MACIERZ_ZGODNOSCI.md` = `przetestowane`
-- [ ] E2E Playwright: pełny flow sklep → motyw → strona → draft → publish → reopen ✓
-- [ ] Interfejsy `packages/persistence` wdrożone w `sklepik` ✓
-- [ ] API endpointy w `sklepik` działające ✓
+- GitHub Packages lub prywatny rejestr npm,
+- semver dla `schema`, `renderer` i ewentualnie `component-library`,
+- zgodność kontraktu zapisana i testowana pomiędzy wersją backendu a rendererem.
 
-Gdy wszystko gotowe → edytor jest gotów do integracji do `sklepik`.
+Bezpośrednia zależność `github:...#main` może być używana tymczasowo w eksperymencie, ale nie
+powinna być docelowym mechanizmem produkcyjnym.
 
----
+## Kryterium gotowości integracji
 
-## Pytania?
+- [ ] działa lokalny pionowy scenariusz draft → preview → publish,
+- [ ] `packages/editor-core` ma testy undo/redo,
+- [ ] persistence ma testy CRUD, transakcji i izolacji sklepów,
+- [ ] preview i renderer live przechodzą wspólne snapshot/component tests,
+- [ ] aplikacja edytora ma E2E Playwright,
+- [ ] backend Rails ma modele, migracje, autoryzację i Admin/Store API,
+- [ ] `Sklepik*Repository` przechodzi testy kontraktowe,
+- [ ] dashboard otwiera edytor dla właściwego sklepu,
+- [ ] storefront renderuje opublikowany dokument,
+- [ ] publikacja odświeża cache storefrontu,
+- [ ] drafty nie są dostępne przez publiczne Store API,
+- [ ] macierz zgodności odzwierciedla rzeczywisty stan implementacji.
 
-- **Czy interfejsy persistence są wystarczające?** → Sprawdzić `MACIERZ_ZGODNOSCI.md` sekcja 1
-- **Gdzie jest live preview?** → `packages/renderer` + `apps/editor` (etapy 5-8)
-- **Co z undo/redo?** → `packages/editor-core` `CommandStack` (już zrobione w etapie 3)
+## Odpowiedzi na częste pytania
+
+**Czy edytor jest już przepisany na TypeScript?**  
+Tak — Rails został usunięty, a aktywne repo jest TypeScriptowe. Ukończony jest jednak fundament i
+schema, nie cały wizualny edytor.
+
+**Czy undo/redo już działa?**  
+Nie. `CommandStack` i komendy są nadal planowane.
+
+**Czy istnieje live preview?**  
+Nie. Powstanie po wdrożeniu component library i renderera.
+
+**Czy integracja ze `sklepik` już działa?**  
+Nie. Ten dokument opisuje plan oraz granice odpowiedzialności.
