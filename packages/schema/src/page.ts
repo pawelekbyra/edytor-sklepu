@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { IdSchema } from './common.js';
 import { SectionSchema } from './section.js';
 
-// Mirrors the 15 Rails Spree::Pages::* STI subclasses (page_builder/app/models/spree/pages/*.rb).
-// See docs/COMPATIBILITY_MATRIX.md section 2 for the full mapping.
+// The 15 canonical page types retained from the former Rails implementation.
+// See docs/MACIERZ_ZGODNOSCI.md section 2 for their current rewrite status.
 export const PAGE_TYPES = [
   'homepage',
   'custom',
