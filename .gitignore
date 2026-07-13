@@ -61,3 +61,10 @@ brakeman-*.*
 .claude
 */.claude
 **/node_modules
+
+# Node/TypeScript monorepo (apps/, packages/)
+**/dist
+**/.turbo
+**/.next
+.data
+*.tsbuildinfo
