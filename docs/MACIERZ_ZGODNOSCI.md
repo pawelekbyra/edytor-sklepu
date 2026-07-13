@@ -1,116 +1,126 @@
 # Macierz zgodności funkcjonalnej: nowy edytor (TypeScript) → starsze odpowiedniki
 
-> Stan na start rewrite'u: **wszystko `planowane`**. Dokument jest żywy — po każdym etapie z
-> [`docs/ARCHITEKTURA.md`](ARCHITEKTURA.md) odpowiednie wiersze przechodzą
-> `planowane` → `zaimplementowane` → `przetestowane`.
+> Dokument pokazuje bieżący stan rewrite'u. Sam typ lub schema może być już zaimplementowany,
+> mimo że jego komponent React, persistence albo UI nadal są planowane. Po każdej zmianie status
+> powinien przechodzić kolejno: `planowane` → `zaimplementowane` → `przetestowane`.
 
-Legenda: `planowane` · `zaimplementowane` · `przetestowane`.
+Legenda:
 
-## 1. Model danych i workflow (funkcje przekrojowe)
+- `planowane` — brak implementacji,
+- `zaimplementowane (schema only)` — istnieje kontrakt danych, ale nie działa jeszcze funkcja użytkowa,
+- `przetestowane (schema only)` — kontrakt danych ma reprezentatywne testy, ale renderer/UI nadal nie istnieją,
+- `zaimplementowane` — funkcja istnieje,
+- `przetestowane` — funkcja istnieje i ma odpowiednie testy.
+
+## 1. Model danych i workflow
 
 | Funkcja | Odpowiednik w nowej architekturze | Status | Test |
 |---|---|---|---|
-| Hierarchia Store→Theme→Page→Section→Block→Link | `packages/schema`: `PageSchema`, `ThemeSchema`, `SectionSchema`, `BlockSchema` | przetestowane | `packages/schema/test/page.test.ts` |
-| STI (pole `type` jako dyskryminator) | Zod discriminated union | przetestowane | `packages/schema/test/{section,block,page}.test.ts` |
+| Hierarchia Store→Theme→Page→Section→Block→Link | `packages/schema`: `PageSchema`, `ThemeSchema`, `SectionSchema`, `BlockSchema` | przetestowane (schema only) | `packages/schema/test/page.test.ts` |
+| Pole `type` jako dyskryminator | Zod discriminated union | przetestowane (schema only) | `packages/schema/test/{section,block,page}.test.ts` |
 | Rejestr rozszerzalności typów | `packages/renderer` component registry | planowane | |
-| Preferencje jako płaskie skalary | pola w schema per typ, z `.default()` | przetestowane | `packages/schema/test/section.test.ts` |
-| Rich text (ActionText) | pole `html: string` w schema | planowane | |
-| Assety (obraz sekcji, screenshot) | `MediaRepository` zwraca URL; schema trzyma `assetId` | planowane | |
-| Preview = duplikat, nie wersja | `PageVersionSchema` z `status: draft/published` | zaimplementowane (schema only) | `packages/schema/test/page-version.test.ts` |
-| Publish = transakcyjna podmiana | `VersionRepository.publish(pageId)` — transakcja SQLite | planowane | |
+| Preferencje jako płaskie skalary | pola w schema per typ, z `.default()` | przetestowane (schema only) | `packages/schema/test/section.test.ts` |
+| Rich text | pole `html: string` w schema + bezpieczny renderer | zaimplementowane (schema only) | |
+| Assety | `MediaRepository`; schema trzyma `assetId` | zaimplementowane (schema only) | |
+| Draft/published jako wersje | `PageVersionSchema` | przetestowane (schema only) | `packages/schema/test/page-version.test.ts` |
+| Publish = transakcyjna podmiana | `VersionRepository.publish(pageId)` | planowane | |
 | Duplikowanie motywu/strony | `PageRepository.duplicate()` / `ThemeRepository.duplicate()` | planowane | |
-| Reorder sekcji/bloków | `editor-core`: `MoveSectionCommand`/`MoveBlockCommand` + `@dnd-kit` | planowane | |
-| Undo/redo | `editor-core` command stack (`CommandStack.undo()/redo()`) | planowane | |
+| Reorder sekcji/bloków | `MoveSectionCommand` / `MoveBlockCommand` + `@dnd-kit` | planowane | |
+| Undo/redo | `CommandStack.undo()` / `redo()` | planowane | |
 | Historia zmian | `VersionRepository.listVersions(pageId)` | planowane | |
-| Izolacja między sklepami | `storeId` wymagane pole w każdym repozytorium | planowane | |
-| Domyślny motyw po utworzeniu | `PersistenceBootstrap.createStore()` | planowane | |
-| Allowlist typów (bezpieczeństwo) | walidacja Zod odrzuca nieznany `type` | przetestowane | `packages/schema/test/` |
+| Izolacja między sklepami | `storeId` w schema i repozytoriach | zaimplementowane (schema only) | testy persistence planowane |
+| Domyślny motyw po utworzeniu | bootstrap po stronie persistence/backendu | planowane | |
+| Allowlist typów | Zod odrzuca nieznany `type` | przetestowane (schema only) | `packages/schema/test/` |
 
 ## 2. Typy stron (15)
 
+Wszystkie typy są obecne w `PAGE_TYPES` i akceptowane przez `PageSchema`. Testy obejmują wybrane
+typy i odrzucenie nieznanej wartości; rzeczywiste ekrany, dane systemowe i rendering są planowane.
+
 | Typ | Rola | Odpowiednik nowy | Status |
 |---|---|---|---|
-| Homepage | strona główna | `PageType: "homepage"` | planowane |
-| Custom | dowolna strona | `PageType: "custom"` | planowane |
-| ProductDetails | PDP | `PageType: "product-details"` | planowane |
-| Taxon | strona kategorii | `PageType: "taxon"` | planowane |
-| TaxonList | lista kategorii | `PageType: "taxon-list"` | planowane |
-| ShopAll | wszystkie produkty | `PageType: "shop-all"` | planowane |
-| SearchResults | wyniki wyszukiwania | `PageType: "search-results"` | planowane |
-| Cart | koszyk | `PageType: "cart"` (layout + demo) | planowane |
-| Checkout | checkout | `PageType: "checkout"` | planowane |
-| Wishlist | lista życzeń | `PageType: "wishlist"` | planowane |
-| Account | panel konta | `PageType: "account"` | planowane |
-| Login | logowanie | `PageType: "login"` | planowane |
-| Password | "coming soon" | `PageType: "password"` | planowane |
-| Post | wpis blogowy | `PageType: "post"` | planowane |
-| PostList | lista wpisów | `PageType: "post-list"` | planowane |
+| Homepage | strona główna | `PageType: "homepage"` | zaimplementowane (schema only) |
+| Custom | dowolna strona | `PageType: "custom"` | zaimplementowane (schema only) |
+| ProductDetails | PDP | `PageType: "product-details"` | zaimplementowane (schema only) |
+| Taxon | strona kategorii | `PageType: "taxon"` | zaimplementowane (schema only) |
+| TaxonList | lista kategorii | `PageType: "taxon-list"` | zaimplementowane (schema only) |
+| ShopAll | wszystkie produkty | `PageType: "shop-all"` | zaimplementowane (schema only) |
+| SearchResults | wyniki wyszukiwania | `PageType: "search-results"` | zaimplementowane (schema only) |
+| Cart | koszyk — layout, bez przepisywania commerce | `PageType: "cart"` | zaimplementowane (schema only) |
+| Checkout | checkout — layout | `PageType: "checkout"` | zaimplementowane (schema only) |
+| Wishlist | lista życzeń | `PageType: "wishlist"` | zaimplementowane (schema only) |
+| Account | panel konta | `PageType: "account"` | zaimplementowane (schema only) |
+| Login | logowanie | `PageType: "login"` | zaimplementowane (schema only) |
+| Password | coming soon | `PageType: "password"` | zaimplementowane (schema only) |
+| Post | wpis blogowy | `PageType: "post"` | zaimplementowane (schema only) |
+| PostList | lista wpisów | `PageType: "post-list"` | zaimplementowane (schema only) |
 
-## 3. Typy sekcji (16 w nowej bibliotece)
+## 3. Typy sekcji (16)
 
-| Typ nowy | Rola | Status |
-|---|---|---|
-| Hero | baner główny | planowane |
-| Header | nagłówek | planowane |
-| Footer | stopka | planowane |
-| ProductGrid | siatka produktów | planowane |
-| CategoryGrid | siatka kategorii | planowane |
-| ImageBanner | baner z obrazem | planowane |
-| RichText | tekst sformatowany | planowane |
-| Newsletter | newsletter | planowane |
-| Testimonials | opinie | planowane |
-| FAQ | FAQ | planowane |
-| Video | wideo | planowane |
-| Spacer | odstęp | planowane |
-| Columns | kolumny | planowane |
-| Button | przycisk | planowane |
-| Image | obraz | planowane |
-| Navigation | nawigacja | planowane |
+Schematy wszystkich sekcji istnieją w `packages/schema`. Testy obejmują reprezentatywne przypadki,
+między innymi hero, image banner i FAQ. Komponenty React, renderer oraz edycja wizualna są planowane.
 
-## 4. Typy bloków (4 w nowej bibliotece)
+| Typ | Rola | Schema | Komponent/renderer |
+|---|---|---|---|
+| Hero | baner główny | zaimplementowane | planowane |
+| Header | nagłówek | zaimplementowane | planowane |
+| Footer | stopka | zaimplementowane | planowane |
+| ProductGrid | siatka produktów | zaimplementowane | planowane |
+| CategoryGrid | siatka kategorii | zaimplementowane | planowane |
+| ImageBanner | baner z obrazem | zaimplementowane | planowane |
+| RichText | tekst sformatowany | zaimplementowane | planowane |
+| Newsletter | newsletter | zaimplementowane | planowane |
+| Testimonials | opinie | zaimplementowane | planowane |
+| FAQ | FAQ | zaimplementowane | planowane |
+| Video | wideo | zaimplementowane | planowane |
+| Spacer | odstęp | zaimplementowane | planowane |
+| Columns | kolumny | zaimplementowane | planowane |
+| Button | przycisk | zaimplementowane | planowane |
+| Image | obraz | zaimplementowane | planowane |
+| Navigation | nawigacja | zaimplementowane | planowane |
 
-| Typ nowy | Rola | Status |
-|---|---|---|
-| Button | przycisk CTA | planowane |
-| Image | obraz w sekcji | planowane |
-| RichText | tekst w sekcji | planowane |
-| Navigation | link nawigacyjny | planowane |
+## 4. Typy bloków (4)
 
-## 5. Kontrolery / trasy admina → komendy edytora
+Schematy istnieją; testy bloków i komponenty renderujące wymagają osobnego pokrycia.
+
+| Typ | Rola | Schema | Komponent/renderer |
+|---|---|---|---|
+| Button | przycisk CTA | zaimplementowane | planowane |
+| Image | obraz w sekcji | zaimplementowane | planowane |
+| RichText | tekst w sekcji | zaimplementowane | planowane |
+| Navigation | link nawigacyjny | zaimplementowane | planowane |
+
+## 5. Operacje edytora
 
 | Operacja | Odpowiednik nowy | Status |
 |---|---|---|
-| Utwórz/edytuj/usuń temat | `ThemeRepository` CRUD | planowane |
+| Utwórz/edytuj/usuń motyw | `ThemeRepository` CRUD | planowane |
 | Utwórz/edytuj/usuń stronę | `PageRepository` CRUD | planowane |
-| Dodaj sekcję | `AddSectionCommand` (waliduje typ) | planowane |
+| Dodaj sekcję | `AddSectionCommand` | planowane |
 | Edytuj sekcję | `UpdateSectionCommand` | planowane |
 | Usuń sekcję | `DeleteSectionCommand` | planowane |
-| Przesuń sekcję | `MoveSectionCommand` (undo-able) | planowane |
-| Przywróć ustawienia do domyślnych | `RestoreSectionDefaultsCommand` | planowane |
-| Analogicznie dla bloków | `Add/Update/Delete/MoveBlockCommand` | planowane |
-| Opublikuj temat+strona | `PublishThemeCommand`, `PublishPageCommand` | planowane |
-| Powiel temat/stronę | `DuplicateThemeCommand`, `DuplicatePageCommand` | planowane |
+| Przesuń sekcję | `MoveSectionCommand` | planowane |
+| Przywróć ustawienia domyślne | `RestoreSectionDefaultsCommand` | planowane |
+| Operacje na blokach | `Add/Update/Delete/MoveBlockCommand` | planowane |
+| Opublikuj motyw/stronę | `PublishThemeCommand`, `PublishPageCommand` | planowane |
+| Powiel motyw/stronę | `DuplicateThemeCommand`, `DuplicatePageCommand` | planowane |
 
 ## 6. Renderowanie
 
 | Funkcja | Odpowiednik nowy | Status |
 |---|---|---|
-| `render_page(page)` | `renderPage(page, versionId?)` w `packages/renderer` | planowane |
-| `render_section(section)` — 3 tryby | `renderSection(section, { mode: "edit"/"live"/"lazy" })` | planowane |
-| Konwersja type → component | component registry w `packages/renderer` | planowane |
-| Preferencje → CSS inline | `sectionStyles()`/`blockStyles()` w `packages/renderer` | planowane |
-| Tryb edycji vs. publiczny | prop `mode: "edit" | "live"` do renderera | planowane |
-| Error boundary per-sekcja | error boundary w `packages/renderer` | planowane |
+| Renderowanie strony | `renderPage(document, context)` w `packages/renderer` | planowane |
+| Renderowanie sekcji | `renderSection(section, context)` | planowane |
+| Konwersja type → component | component registry | planowane |
+| Preferencje → style | `sectionStyles()` / `blockStyles()` | planowane |
+| Tryby editor/preview/live | kontekst renderera | planowane |
+| Error boundary per sekcja | bezpieczny fallback renderera | planowane |
 
-## Status implementacji etapami
+## Status etapów
 
-- **Etap 1–3** (bieżący): Audyt, dokumentacja, scaffolding, `packages/schema` ✅
-- **Etap 4**: Persistence i wersjonowanie — interfejsy + SQLite demo
-- **Etap 5**: Renderer komponentów
-- **Etap 6**: Canvas + drag&drop
-- **Etap 7**: Panel właściwości
-- **Etap 8**: Live preview
-- **Etap 9**: Draft/publish i historia
-- **Etap 10**: Media
-- **Etap 11**: Motywy
-- **Etap 12**: Pełna zgodność funkcjonalna
+- **Fundament rewrite'u — gotowe:** audyt, dokumentacja, pnpm workspace i `packages/schema` z testami.
+- **Następny krok:** `editor-core`, persistence i minimalny pionowy scenariusz z trzema sekcjami.
+- **Dalej:** renderer oraz component library.
+- **Następnie:** canvas, panel właściwości i live preview.
+- **Po tym:** draft/publish, historia, media i motywy.
+- **Na końcu:** integracja z `sklepik`, `sklepikFront` i pełne E2E.

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { BlockStyleSchema, IdSchema } from './common.js';
 
 // Composable pieces nested inside container sections (Hero, Columns, Header, Footer, Navigation).
-// See docs/COMPATIBILITY_MATRIX.md section 4 for the mapping from the 16 legacy Rails block types.
+// See docs/MACIERZ_ZGODNOSCI.md section 4 for the current schema and renderer status.
 export const BLOCK_TYPES = ['button', 'image', 'rich_text', 'navigation'] as const;
 export type BlockType = (typeof BLOCK_TYPES)[number];
 

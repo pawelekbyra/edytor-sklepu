@@ -1,97 +1,78 @@
-# Spree Rails Storefront
+# Edytor Sklepu
 
-[![Gem Version](https://badge.fury.io/rb/spree_storefront.svg)](https://badge.fury.io/rb/spree_storefront)
+Niezależny wizualny edytor stron i motywów dla ekosystemu `sklepik`, rozwijany jako monorepo **TypeScript / React / Next.js**.
 
-A modern, fully-featured Ruby on Rails storefront for [Spree Commerce](https://spreecommerce.org), with an integrated visual page builder for creating custom pages and managing themes.
+> To repozytorium nie zawiera już Railsowego storefrontu ani gemu `spree_page_builder`. Katalogi `storefront/`, `page_builder/` i `lib/` zostały usunięte. Stary kod Spree był punktem odniesienia funkcjonalnego, ale dalszy rozwój odbywa się wyłącznie w TypeScript.
 
-This repository contains two gems:
+## Stan projektu
 
-- **[spree_storefront](storefront/)** — Responsive storefront with product catalog, cart, checkout, and customer accounts
-- **[spree_page_builder](page_builder/)** — Visual page builder and theme management for the storefront
+### Gotowe
 
-## Tech Stack
+- monorepo pnpm (`apps/*`, `packages/*`),
+- wspólna konfiguracja TypeScript,
+- `packages/schema` jako źródło prawdy dla stron, motywów, sekcji, bloków i wersji,
+- schematy Zod oraz typy TypeScript,
+- 16 kanonicznych typów sekcji,
+- testy schematów,
+- dokumentacja architektury, zgodności i planowanej integracji.
 
-- [Ruby on Rails](https://rubyonrails.org/)
-- [Tailwind CSS v4](https://tailwindcss.com/) — Responsive, mobile-first design
-- [Turbo / Hotwire](https://turbo.hotwired.dev/) — Fast, SPA-like navigation
-- [StimulusJS](https://stimulus.hotwired.dev/) — JavaScript controllers for interactivity
-- [Importmaps](https://github.com/rails/importmap-rails) - NodeJS not required
+### Jeszcze niegotowe
 
-## Installation
+- właściwa aplikacja wizualnego edytora w `apps/editor`,
+- `packages/editor-core` z komendami i undo/redo,
+- persistence i wersjonowanie draft/publish,
+- renderer React współdzielony ze storefrontem,
+- biblioteka komponentów,
+- canvas drag & drop, panel właściwości i live preview,
+- upload mediów, motywy oraz historia wersji,
+- produkcyjna integracja z `pawelekbyra/sklepik` i `sklepikFront`.
 
-Add the storefront gem to your Spree application (this automatically installs the page builder):
+Obecny kod jest więc **fundamentem rewrite'u**, a nie ukończonym page builderem.
 
-```bash
-bundle add spree_storefront
+## Docelowy podział
+
+```text
+edytor-sklepu/
+├── apps/
+│   └── editor/                # planowana aplikacja Next.js z canvasem i preview
+├── packages/
+│   ├── schema/                # istnieje: Zod schemas + typy TS
+│   ├── editor-core/           # planowane: komendy, walidacja, undo/redo
+│   ├── persistence/           # planowane: interfejsy repozytoriów + adapter demo/API
+│   ├── renderer/              # planowane: renderPage/renderSection
+│   └── component-library/     # planowane: komponenty React
+└── docs/
 ```
 
-Then run the install generator:
+Edytor ma operować na wersjonowanym dokumencie strony. Backend `sklepik` będzie przechowywał strony, motywy, media i opublikowane wersje, a `sklepikFront` będzie renderował opublikowany dokument przez ten sam renderer React, którego używa podgląd edytora.
+
+## Dokumentacja
+
+- [`docs/ARCHITEKTURA.md`](docs/ARCHITEKTURA.md) — docelowy podział pakietów i odpowiedzialności,
+- [`docs/MACIERZ_ZGODNOSCI.md`](docs/MACIERZ_ZGODNOSCI.md) — rzeczywisty status funkcji,
+- [`docs/INSTRUKCJA_INTEGRACJI.md`](docs/INSTRUKCJA_INTEGRACJI.md) — plan połączenia z `sklepik` i `sklepikFront`.
+
+## Rozwój lokalny
+
+Wymagania: Node.js 22+ i pnpm.
 
 ```bash
-bin/rails g spree:storefront:install
+pnpm install
+pnpm test
+pnpm typecheck
+pnpm build
 ```
 
-This will set up the storefront views, Tailwind CSS configuration, and page builder migrations.
+Na obecnym etapie testy i typecheck dotyczą głównie istniejących pakietów, przede wszystkim `packages/schema`. `apps/editor` pozostaje placeholderem do czasu wdrożenia rdzenia, persistence i renderera.
 
-You will also need to create your first theme:
+## Zasady projektu
 
-```bash
-Spree::Store.default.send(:create_default_theme)
-```
+1. TypeScript jest jedyną aktywną implementacją edytora.
+2. `packages/schema` definiuje kontrakt dokumentu i nie zależy od Reacta ani bazy danych.
+3. Edytor korzysta z interfejsów repozytoriów, a nie z konkretnego backendu.
+4. Preview i storefront produkcyjny powinny używać tego samego renderera.
+5. Logika commerce — produkty, koszyk, checkout, płatności i zamówienia — pozostaje w `sklepik`; edytor odpowiada za kompozycję i wygląd stron.
 
-## Features
+## Pochodzenie
 
-### Storefront
-
-![Spree Storefront](storefront/storefront.png)
-
-- Product catalog with filtering and search
-- Shopping cart with guest persistence
-- Multi-step checkout (address, shipping, payment)
-- Customer accounts, order history, wishlists
-- SEO optimization with meta tags and structured data
-- Automatically cropping, resizing, and optimizing images for performance, CDN-ready
-
-### Page Builder
-
-![Spree Page Builder](page_builder/page_builder.png)
-
-- Visual editor for creating custom pages
-- Theme management with multiple themes per store
-- 23+ pre-built page sections (headers, footers, product grids, image banners, etc.)
-- Content blocks (text, images, buttons, navigation)
-- Live preview with in-place editing
-
-## Documentation
-
-- [Storefront Customization](https://spreecommerce.org/docs/developer/storefront)
-- [Theming Guide](https://spreecommerce.org/docs/developer/storefront/themes)
-- [Page Builder](https://spreecommerce.org/docs/developer/storefront/pages)
-- [CSS Customization](https://spreecommerce.org/docs/developer/storefront/custom-css)
-
-## Headless Alternative
-
-Check out our [Next.js Starter](https://github.com/spree/spree-nextjs-starter) with React 19, TypeScript and Tailwind CSS.
-
-You can also use the [Spree API](https://spreecommerce.org/docs/developer/api-reference) and [SDK](https://github.com/spree/spree/tree/main/packages/sdk) to build your own storefront or mobile app.
-
-## Development
-
-```bash
-# Run storefront tests
-cd storefront
-bundle install
-bundle exec rake test_app
-bundle exec rspec
-
-# Run page builder tests
-cd page_builder
-bundle install
-bundle exec rake test_app
-bundle exec rspec
-```
-
-## License
-
-- **spree_storefront** is licensed under the [MIT License](storefront/LICENSE.md)
-- **spree_page_builder** is licensed under the [AGPL-3.0-or-later License](page_builder/LICENSE.md)
+Repozytorium powstało na bazie kodu storefrontu i page buildera Spree. Railsowa implementacja została usunięta po rozpoczęciu rewrite'u. Historia Git zachowuje ją jako materiał referencyjny, ale nie jest ona częścią aktualnego drzewa ani planu rozwoju.

@@ -1,7 +1,7 @@
 {
   "name": "edytor-sklepu-monorepo",
   "private": true,
-  "description": "TypeScript rewrite of the spree_page_builder visual editor (apps/packages) alongside the existing Rails gems.",
+  "description": "TypeScript, React and Next.js rewrite of the visual page and theme editor for the sklepik ecosystem.",
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
