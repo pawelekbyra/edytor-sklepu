@@ -1,43 +1,65 @@
-# Architektura nowego edytora (TypeScript / React / Next.js)
+# Architektura edytora (TypeScript / React / Next.js)
 
-> Dokument opisuje docelową architekturę samodzielnej, niezależnej implementacji wizualnego edytora
-> stron w TypeScript. Pełne uzasadnienie decyzji i mapowanie funkcjonalności: patrz
-> [`docs/MACIERZ_ZGODNOSCI.md`](MACIERZ_ZGODNOSCI.md).
+> Dokument opisuje zarówno bieżący stan rewrite'u, jak i docelową architekturę samodzielnego
+> wizualnego edytora stron. Szczegółowy status każdej funkcji znajduje się w
+> [`MACIERZ_ZGODNOSCI.md`](MACIERZ_ZGODNOSCI.md).
+
+## Stan obecny
+
+Repozytorium zostało przepisane z Railsowego `spree_page_builder` na monorepo TypeScript.
+Stare katalogi `page_builder/`, `storefront/` i `lib/` zostały usunięte i nie są aktywną
+implementacją.
+
+Obecnie istnieją:
+
+- konfiguracja pnpm workspaces i TypeScript,
+- `packages/schema` ze schematami Zod, typami i testami,
+- dokumentacja architektury oraz macierz zgodności,
+- placeholder `apps/editor`.
+
+Obecnie **nie istnieją jeszcze** działające pakiety `editor-core`, `persistence`, `renderer` ani
+`component-library`. Nie ma również canvasa, live preview, draft/publish, mediów ani produkcyjnej
+integracji z `sklepik` lub `sklepikFront`.
+
+Poniższe sekcje opisują architekturę docelową. Oznaczenie „planowane” nie oznacza, że katalog lub
+implementacja już istnieje.
 
 ## Cel
 
-Samodzielna aplikacja edytora stron/motywów/sekcji/bloków w TypeScript, uruchamialna niezależnie,
-z rdzeniem domenowym odseparowanym od frameworka UI i od konkretnej bazy danych — tak, żeby
-docelowe podłączenie do API `sklepik` wymagało tylko podmiany implementacji repozytoriów, nie
+Samodzielna aplikacja edytora stron, motywów, sekcji i bloków w TypeScript, uruchamialna
+niezależnie, z rdzeniem domenowym odseparowanym od frameworka UI i konkretnej bazy danych.
+Docelowe podłączenie do API `sklepik` powinno wymagać podmiany adapterów repozytoriów, a nie
 przepisywania logiki edytora.
 
-To repo pozostaje odizolowane: brak integracji z `sklepik`, `sklepikFront`, Store Factory. Dane
-komercyjne (produkty, kategorie) są dostarczane przez `CommerceProvider` z implementacją demo.
+Do czasu integracji repo pozostaje samodzielne. Dane commerce, takie jak produkty i kategorie,
+będą dostarczane przez interfejs `CommerceProvider`: początkowo z implementacji demo, a później
+przez Store/Admin API `sklepik`.
 
 ## Struktura monorepo
 
-```
+```text
 edytor-sklepu/
 ├── docs/
-│   ├── ARCHITEKTURA.md                  # ten plik — docelowa architektura
-│   └── MACIERZ_ZGODNOSCI.md             # mapowanie stare feature -> nowe odpowiedniki
-├── pnpm-workspace.yaml
-├── package.json
-├── tsconfig.base.json
+│   ├── ARCHITEKTURA.md                  # ten plik
+│   ├── MACIERZ_ZGODNOSCI.md             # rzeczywisty status funkcji
+│   └── INSTRUKCJA_INTEGRACJI.md         # plan integracji ze sklepik
+├── pnpm-workspace.yaml                  # istnieje
+├── package.json                         # istnieje
+├── tsconfig.base.json                   # istnieje
 ├── apps/
-│   └── editor/                          # Next.js — UI edytora
+│   └── editor/                          # istnieje jako placeholder; UI planowane
 └── packages/
-    ├── schema/          # Zod schematy + typy TS
-    ├── editor-core/     # komendy, undo/redo, walidacja (bez React)
-    ├── persistence/     # interfejsy repozytoriów + implementacja SQLite demo
-    ├── renderer/        # rejestr typ→komponent, renderPage/renderSection
-    └── component-library/ # komponenty React
+    ├── schema/                          # istnieje
+    ├── editor-core/                     # planowane
+    ├── persistence/                     # planowane
+    ├── renderer/                        # planowane
+    └── component-library/               # planowane
 ```
 
-Zależności są jednokierunkowe (bez cykli): `schema` jest liściem, na którym opierają się pozostałe
-pakiety; `apps/editor` jest jedynym miejscem, które zna wszystkie pakiety naraz.
+Docelowe zależności są jednokierunkowe i nie tworzą cykli. `schema` jest najniższą warstwą,
+a `apps/editor` jest miejscem kompozycji wszystkich pakietów.
 
-```
+```text
         schema
        /   |   \
 editor-core persistence  component-library
@@ -46,60 +68,87 @@ editor-core persistence  component-library
        apps/editor  ←───────────┘
 ```
 
-## Pakiety — odpowiedzialności
+## Pakiety i odpowiedzialności
 
-### `packages/schema`
-- Zod schematy: `PageSchema`, `ThemeSchema`, `SectionSchema` (discriminated union po `type`),
-  `BlockSchema`, `PageVersionSchema`.
-- Eksportuje również wywnioskowane typy TS.
-- Zero zależności od innych pakietów i od Reacta/Next.js/bazy danych.
-- Odpowiednik tabel SQL — spłaszczony do jednego, wersjonowalnego dokumentu JSON.
+### `packages/schema` — istnieje
 
-### `packages/editor-core`
-- Wzorzec komend: każda mutacja (dodaj sekcję, przesuń blok, zmień ustawienie, opublikuj)
-  to obiekt `Command` z metodami `do(state)`/`undo(state)`.
-- `CommandStack` — czysta klasa TS (bez zależności od Reacta), testowalna w izolacji.
-- Walidacja: każda komenda waliduje wejście przez `packages/schema` przed wykonaniem.
-- Logika draft/publish, undo/redo, reorder sekcji/bloków.
+- Zod schemas: `PageSchema`, `ThemeSchema`, `SectionSchema`, `BlockSchema`, `PageVersionSchema`.
+- Typy TypeScript wywnioskowane ze schematów.
+- Brak zależności od Reacta, Next.js i bazy danych.
+- Kontrakt wersjonowalnego dokumentu JSON.
+- Testy wartości domyślnych, dyskryminowanych typów i podstawowej walidacji.
 
-### `packages/persistence`
-- Interfejsy: `PageRepository`, `ThemeRepository`, `VersionRepository`, `MediaRepository`,
-  `CommerceProvider` — wszystkie operacje wymagają `storeId` (izolacja między sklepami).
-- Domyślna implementacja: `better-sqlite3`, plik `.data/editor.db`.
-- `CommerceProvider` zwraca dane demo (nie przepisujemy commerce).
-- Jedyne miejsce, które później zostanie podmienione na klienta API `sklepik`.
+### `packages/editor-core` — planowane
 
-### `packages/renderer`
-- Rejestr `registerSection(type, Component)` / `registerBlock(type, Component)`.
-- `renderPage(page, { mode })` i `renderSection(section, { mode })`.
-- Funkcje `sectionStyles()`/`blockStyles()` (preferencje → CSS).
-- Współdzielony między edytorem a przyszłym storefrontem Next.js.
+- Wzorzec komend dla każdej mutacji dokumentu.
+- `CommandStack` z `do`, `undo` i `redo`.
+- Walidacja wejścia przez `packages/schema`.
+- Reorder sekcji i bloków.
+- Logika stanu edytora niezależna od Reacta.
 
-### `packages/component-library`
-- Komponenty React: `Hero`, `Header`, `Footer`, `ProductGrid`, `CategoryGrid`, `ImageBanner`,
-  `RichText`, `Newsletter`, `Testimonials`, `FAQ`, `Video`, `Spacer`, `Columns`, `Button`,
-  `Image`, `Navigation`.
-- Czysto prezentacyjne, zero logiki biznesowej.
+Draft/publish i historia wersji powinny być koordynowane przez core, ale atomowy zapis i publikacja
+należą do warstwy persistence/backendu.
 
-### `apps/editor`
-- Next.js App Router. Canvas (drag&drop przez `@dnd-kit`) → panel właściwości → live preview →
-  pasek draft/publish/historia.
-- Stan edytora: `editor-core` `CommandStack` opakowany hookiem `useEditorStore`.
+### `packages/persistence` — planowane
+
+- Interfejsy `PageRepository`, `ThemeRepository`, `VersionRepository`, `MediaRepository` oraz
+  `CommerceProvider`.
+- Wszystkie operacje wymagają kontekstu `storeId`.
+- Implementacja demo może używać `better-sqlite3` i `.data/editor.db`.
+- Implementacja produkcyjna będzie adapterem API `sklepik` i pozostanie w tym repo/pakiecie,
+  zamiast tworzyć drugi serwer TypeScript w repo Rails.
+
+### `packages/component-library` — planowane
+
+Prezentacyjne komponenty React, między innymi:
+
+- `Hero`, `Header`, `Footer`,
+- `ProductGrid`, `CategoryGrid`,
+- `ImageBanner`, `RichText`, `Newsletter`,
+- `Testimonials`, `FAQ`, `Video`,
+- `Spacer`, `Columns`, `Button`, `Image`, `Navigation`.
+
+Komponenty nie zawierają logiki koszyka, checkoutu, płatności ani zamówień.
+
+### `packages/renderer` — planowane
+
+- rejestr `registerSection(type, Component)` i `registerBlock(type, Component)`,
+- `renderPage(document, context)` i `renderSection(section, context)`,
+- mapowanie preferencji stylu na bezpieczne właściwości/CSS,
+- tryby `editor`, `preview` i `live`,
+- wspólny renderer dla podglądu edytora i storefrontu Next.js.
+
+Ta współdzielona warstwa jest kluczowa: preview nie powinno mieć osobnej implementacji wyglądu niż
+opublikowana strona.
+
+### `apps/editor` — placeholder, UI planowane
+
+Docelowa aplikacja Next.js App Router:
+
+- canvas z drag & drop przez `@dnd-kit`,
+- wybór sekcji i bloków,
+- panel właściwości generowany ze schematów,
+- live preview w iframe,
+- pasek draft/publish i historia wersji,
+- biblioteka mediów i zarządzanie motywami.
 
 ## Format dokumentu strony
+
+Poniższy przykład jest formatem docelowym; ostatecznym źródłem prawdy pozostają schematy w
+`packages/schema`.
 
 ```ts
 type PageDocument = {
   id: string;
   storeId: string;
-  type: PageType; // "homepage" | "custom" | "product-details" | ...
+  type: PageType;
   themeId: string;
-  sections: SectionInstance[]; // uporządkowane po position
+  sections: SectionInstance[];
 };
 
 type SectionInstance = {
   id: string;
-  type: SectionType; // "hero" | "rich_text" | "product_grid" | ...
+  type: SectionType;
   position: number;
   preferences: Record<string, string | number | boolean | null>;
   blocks?: BlockInstance[];
@@ -117,17 +166,28 @@ type PageVersion = {
 
 ## Narzędzia
 
-- **pnpm workspaces** — bez Turborepo na start.
-- **TypeScript strict mode** wszędzie.
-- **Vitest** — testy jednostkowe we wszystkich pakietach.
-- **React Testing Library** — testy komponentów.
-- **Playwright** — end-to-end demo flow.
-- **@dnd-kit/core** — drag & drop w canvasie.
-- **better-sqlite3** — persystencja demo.
+### Używane obecnie
 
-## Co NIE wchodzi w zakres
+- pnpm workspaces,
+- TypeScript w trybie strict,
+- Zod,
+- Vitest.
 
-- Prawdziwa logika commerce (koszyk, checkout, płatności) — tylko demo.
-- Integracja z `sklepik`, `sklepikFront`, Store Factory, dashboardem React.
-- Storefront Next.js — to osobny, przyszły projekt; `packages/renderer` jest projektowany
-  żeby to umożliwić.
+### Planowane wraz z kolejnymi pakietami
+
+- React i Next.js,
+- React Testing Library,
+- Playwright,
+- `@dnd-kit/core`,
+- `better-sqlite3` dla lokalnej implementacji demo.
+
+## Granice systemu
+
+Edytor nie implementuje prawdziwej logiki commerce. Produkty, ceny, zapasy, koszyk, checkout,
+płatności, klienci i zamówienia pozostają odpowiedzialnością `sklepik`.
+
+Repo nie jest drugim storefrontem. `sklepikFront` pozostaje aplikacją klienta, a w przyszłości może
+konsumować opublikowane dokumenty oraz `packages/renderer`.
+
+Integracja z `sklepik`, panelem administracyjnym i Store Factory jest planowana, ale nie działa
+jeszcze w aktualnym kodzie. Plan integracji opisuje [`INSTRUKCJA_INTEGRACJI.md`](INSTRUKCJA_INTEGRACJI.md).
