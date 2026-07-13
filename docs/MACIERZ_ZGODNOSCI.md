@@ -8,7 +8,7 @@ Legenda:
 
 - `planowane` — brak implementacji,
 - `zaimplementowane (schema only)` — istnieje kontrakt danych, ale nie działa jeszcze funkcja użytkowa,
-- `przetestowane (schema only)` — kontrakt danych ma testy, ale renderer/UI nadal nie istnieją,
+- `przetestowane (schema only)` — kontrakt danych ma reprezentatywne testy, ale renderer/UI nadal nie istnieją,
 - `zaimplementowane` — funkcja istnieje,
 - `przetestowane` — funkcja istnieje i ma odpowiednie testy.
 
@@ -34,59 +34,61 @@ Legenda:
 
 ## 2. Typy stron (15)
 
-Wszystkie typy są obecne w `PAGE_TYPES` i akceptowane przez `PageSchema`. Ich rzeczywiste ekrany,
-dane systemowe i rendering nadal są planowane.
+Wszystkie typy są obecne w `PAGE_TYPES` i akceptowane przez `PageSchema`. Testy obejmują wybrane
+typy i odrzucenie nieznanej wartości; rzeczywiste ekrany, dane systemowe i rendering są planowane.
 
 | Typ | Rola | Odpowiednik nowy | Status |
 |---|---|---|---|
-| Homepage | strona główna | `PageType: "homepage"` | przetestowane (schema only) |
-| Custom | dowolna strona | `PageType: "custom"` | przetestowane (schema only) |
-| ProductDetails | PDP | `PageType: "product-details"` | przetestowane (schema only) |
-| Taxon | strona kategorii | `PageType: "taxon"` | przetestowane (schema only) |
-| TaxonList | lista kategorii | `PageType: "taxon-list"` | przetestowane (schema only) |
-| ShopAll | wszystkie produkty | `PageType: "shop-all"` | przetestowane (schema only) |
-| SearchResults | wyniki wyszukiwania | `PageType: "search-results"` | przetestowane (schema only) |
-| Cart | koszyk — layout, bez przepisywania commerce | `PageType: "cart"` | przetestowane (schema only) |
-| Checkout | checkout — layout | `PageType: "checkout"` | przetestowane (schema only) |
-| Wishlist | lista życzeń | `PageType: "wishlist"` | przetestowane (schema only) |
-| Account | panel konta | `PageType: "account"` | przetestowane (schema only) |
-| Login | logowanie | `PageType: "login"` | przetestowane (schema only) |
-| Password | coming soon | `PageType: "password"` | przetestowane (schema only) |
-| Post | wpis blogowy | `PageType: "post"` | przetestowane (schema only) |
-| PostList | lista wpisów | `PageType: "post-list"` | przetestowane (schema only) |
+| Homepage | strona główna | `PageType: "homepage"` | zaimplementowane (schema only) |
+| Custom | dowolna strona | `PageType: "custom"` | zaimplementowane (schema only) |
+| ProductDetails | PDP | `PageType: "product-details"` | zaimplementowane (schema only) |
+| Taxon | strona kategorii | `PageType: "taxon"` | zaimplementowane (schema only) |
+| TaxonList | lista kategorii | `PageType: "taxon-list"` | zaimplementowane (schema only) |
+| ShopAll | wszystkie produkty | `PageType: "shop-all"` | zaimplementowane (schema only) |
+| SearchResults | wyniki wyszukiwania | `PageType: "search-results"` | zaimplementowane (schema only) |
+| Cart | koszyk — layout, bez przepisywania commerce | `PageType: "cart"` | zaimplementowane (schema only) |
+| Checkout | checkout — layout | `PageType: "checkout"` | zaimplementowane (schema only) |
+| Wishlist | lista życzeń | `PageType: "wishlist"` | zaimplementowane (schema only) |
+| Account | panel konta | `PageType: "account"` | zaimplementowane (schema only) |
+| Login | logowanie | `PageType: "login"` | zaimplementowane (schema only) |
+| Password | coming soon | `PageType: "password"` | zaimplementowane (schema only) |
+| Post | wpis blogowy | `PageType: "post"` | zaimplementowane (schema only) |
+| PostList | lista wpisów | `PageType: "post-list"` | zaimplementowane (schema only) |
 
 ## 3. Typy sekcji (16)
 
-Schematy sekcji istnieją w `packages/schema`. Komponenty React, renderer oraz edycja wizualna są
-nadal planowane.
+Schematy wszystkich sekcji istnieją w `packages/schema`. Testy obejmują reprezentatywne przypadki,
+między innymi hero, image banner i FAQ. Komponenty React, renderer oraz edycja wizualna są planowane.
 
 | Typ | Rola | Schema | Komponent/renderer |
 |---|---|---|---|
-| Hero | baner główny | przetestowane | planowane |
-| Header | nagłówek | przetestowane | planowane |
-| Footer | stopka | przetestowane | planowane |
-| ProductGrid | siatka produktów | przetestowane | planowane |
-| CategoryGrid | siatka kategorii | przetestowane | planowane |
-| ImageBanner | baner z obrazem | przetestowane | planowane |
-| RichText | tekst sformatowany | przetestowane | planowane |
-| Newsletter | newsletter | przetestowane | planowane |
-| Testimonials | opinie | przetestowane | planowane |
-| FAQ | FAQ | przetestowane | planowane |
-| Video | wideo | przetestowane | planowane |
-| Spacer | odstęp | przetestowane | planowane |
-| Columns | kolumny | przetestowane | planowane |
-| Button | przycisk | przetestowane | planowane |
-| Image | obraz | przetestowane | planowane |
-| Navigation | nawigacja | przetestowane | planowane |
+| Hero | baner główny | zaimplementowane | planowane |
+| Header | nagłówek | zaimplementowane | planowane |
+| Footer | stopka | zaimplementowane | planowane |
+| ProductGrid | siatka produktów | zaimplementowane | planowane |
+| CategoryGrid | siatka kategorii | zaimplementowane | planowane |
+| ImageBanner | baner z obrazem | zaimplementowane | planowane |
+| RichText | tekst sformatowany | zaimplementowane | planowane |
+| Newsletter | newsletter | zaimplementowane | planowane |
+| Testimonials | opinie | zaimplementowane | planowane |
+| FAQ | FAQ | zaimplementowane | planowane |
+| Video | wideo | zaimplementowane | planowane |
+| Spacer | odstęp | zaimplementowane | planowane |
+| Columns | kolumny | zaimplementowane | planowane |
+| Button | przycisk | zaimplementowane | planowane |
+| Image | obraz | zaimplementowane | planowane |
+| Navigation | nawigacja | zaimplementowane | planowane |
 
 ## 4. Typy bloków (4)
 
+Schematy istnieją; testy bloków i komponenty renderujące wymagają osobnego pokrycia.
+
 | Typ | Rola | Schema | Komponent/renderer |
 |---|---|---|---|
-| Button | przycisk CTA | przetestowane | planowane |
-| Image | obraz w sekcji | przetestowane | planowane |
-| RichText | tekst w sekcji | przetestowane | planowane |
-| Navigation | link nawigacyjny | przetestowane | planowane |
+| Button | przycisk CTA | zaimplementowane | planowane |
+| Image | obraz w sekcji | zaimplementowane | planowane |
+| RichText | tekst w sekcji | zaimplementowane | planowane |
+| Navigation | link nawigacyjny | zaimplementowane | planowane |
 
 ## 5. Operacje edytora
 
