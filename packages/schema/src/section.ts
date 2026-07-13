@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { IdSchema, SectionStyleSchema } from './common.js';
 import { BlockSchema } from './block.js';
 
-// The 16 canonical section types from the target component-library (see docs/NEW_ARCHITECTURE.md).
-// docs/COMPATIBILITY_MATRIX.md section 3 maps each of the 25 legacy Rails section types onto these.
+// The 16 canonical section types planned for the component library.
+// See docs/ARCHITEKTURA.md and docs/MACIERZ_ZGODNOSCI.md section 3 for current status.
 export const SECTION_TYPES = [
   'hero',
   'header',
@@ -74,8 +74,8 @@ export const CategoryGridSectionSchema = BaseSectionSchema.extend({
   }),
 });
 
-// heightPx/overlayTransparency defaults mirror Spree::PageSections::ImageBanner
-// (page_builder/app/models/spree/page_sections/image_banner.rb: HEIGHT=384, OVERLAY_TRANSPARENCY=40).
+// heightPx/overlayTransparency defaults mirror the former
+// Spree::PageSections::ImageBanner values: HEIGHT=384, OVERLAY_TRANSPARENCY=40.
 export const ImageBannerSectionSchema = BaseSectionSchema.extend({
   type: z.literal('image_banner'),
   preferences: z.object({
