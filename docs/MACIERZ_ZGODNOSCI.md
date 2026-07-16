@@ -49,24 +49,28 @@ Legenda: `planowane` · `zaimplementowane` · `przetestowane`.
 
 ## 3. Typy sekcji (16 w nowej bibliotece)
 
-| Typ nowy | Rola | Status |
-|---|---|---|
-| Hero | baner główny | planowane |
-| Header | nagłówek | planowane |
-| Footer | stopka | planowane |
-| ProductGrid | siatka produktów | planowane |
-| CategoryGrid | siatka kategorii | planowane |
-| ImageBanner | baner z obrazem | planowane |
-| RichText | tekst sformatowany | planowane |
-| Newsletter | newsletter | planowane |
-| Testimonials | opinie | planowane |
-| FAQ | FAQ | planowane |
-| Video | wideo | planowane |
-| Spacer | odstęp | planowane |
-| Columns | kolumny | planowane |
-| Button | przycisk | planowane |
-| Image | obraz | planowane |
-| Navigation | nawigacja | planowane |
+Wszystkie 16 typów mają **schemat** w `packages/schema` (przetestowany). Kolumna „Komponent"
+dotyczy `packages/component-library`. Sekcje **commerce** świadomie nie mają komponentu w bibliotece
+— dostarcza go host (patrz `ARCHITEKTURA.md`, „Podział sekcji: treść vs commerce").
+
+| Typ nowy | Rola | Schema | Komponent |
+|---|---|---|---|
+| Hero | baner główny | przetestowane | przetestowane (`component-library`) |
+| Header | nagłówek | przetestowane | planowane |
+| Footer | stopka | przetestowane | planowane |
+| ProductGrid | siatka produktów | przetestowane | **slot hosta** — statyczny podgląd w `apps/editor`, realna implementacja (async RSC + dane) w `apps/storefront-demo` |
+| CategoryGrid | siatka kategorii | przetestowane | **slot hosta** — planowane |
+| ImageBanner | baner z obrazem | przetestowane | przetestowane (`component-library`) |
+| RichText | tekst sformatowany | przetestowane | przetestowane (`component-library`) |
+| Newsletter | newsletter | przetestowane | przetestowane (`component-library`) |
+| Testimonials | opinie | przetestowane | planowane |
+| FAQ | FAQ | przetestowane | przetestowane (`component-library`) |
+| Video | wideo | przetestowane | planowane |
+| Spacer | odstęp | przetestowane | przetestowane (`component-library`) |
+| Columns | kolumny | przetestowane | planowane |
+| Button | przycisk | przetestowane | przetestowane (`component-library`) |
+| Image | obraz | przetestowane | planowane |
+| Navigation | nawigacja | przetestowane | planowane |
 
 ## 4. Typy bloków (4 w nowej bibliotece)
 
@@ -83,9 +87,9 @@ Legenda: `planowane` · `zaimplementowane` · `przetestowane`.
 |---|---|---|
 | Utwórz/edytuj/usuń temat | `ThemeRepository` CRUD | planowane |
 | Utwórz/edytuj/usuń stronę | `PageRepository` CRUD | planowane |
-| Dodaj sekcję | `AddSectionCommand` (waliduje typ) | planowane |
+| Dodaj sekcję | `AddSectionCommand` + paleta w `apps/editor` (fabryka `createSection` sieje domyślne wartości per typ) | przetestowane (jednostkowo + w przeglądarce) |
 | Edytuj sekcję | `UpdateSectionCommand` — merge-patch preferencji, undo-able, panel właściwości w `apps/editor` (Etap 7) | przetestowane (jednostkowo + w przeglądarce) |
-| Usuń sekcję | `DeleteSectionCommand` | planowane |
+| Usuń sekcję | `DeleteSectionCommand` (undo przywraca na oryginalny indeks) + przycisk 🗑 w canvasie | przetestowane (jednostkowo + w przeglądarce) |
 | Przesuń sekcję | `MoveSectionCommand` (undo-able) + `@dnd-kit` w `apps/editor` (Etap 6) | przetestowane (jednostkowo + w przeglądarce) |
 | Przywróć ustawienia do domyślnych | `RestoreSectionDefaultsCommand` | planowane |
 | Analogicznie dla bloków | `MoveBlockCommand`/`UpdateBlockCommand` gotowe i przetestowane jednostkowo (brak jeszcze UI w `apps/editor` — nie ma bloków w seed data ani `component-library` do zademonstrowania); `Add/DeleteBlockCommand` planowane | częściowo przetestowane |
@@ -100,8 +104,9 @@ Legenda: `planowane` · `zaimplementowane` · `przetestowane`.
 | `render_section(section)` — 3 tryby | `renderSection(section, { mode: "edit"/"live"/"lazy" })` — i symetrycznie `renderBlock(block, { mode })` dla bloków zagnieżdżonych w sekcjach | przetestowane (`render-section.test.tsx`, `render-block.test.tsx`) |
 | Konwersja type → component | component registry w `packages/renderer` (`registerSection`/`registerBlock`) | przetestowane (`registry.test.tsx`) |
 | Preferencje → CSS inline | `sectionStyles()`/`blockStyles()` w `packages/renderer` | przetestowane (`styles.test.ts`) |
-| Tryb edycji vs. publiczny | prop `mode: "edit" | "live" | "lazy"` do renderera | przetestowane (`render-section.test.tsx`) |
-| Error boundary per-sekcja | `SectionErrorBoundary` w `packages/renderer` — nieznany typ renderuje czytelny fallback zamiast crashować, rzucający komponent też | przetestowane (`render-section.test.tsx`) |
+| Tryb edycji vs. publiczny | prop `mode: "edit" | "live" | "lazy"` do renderera; komponenty `component-library` realnie się po nim różnią (`<a href>` na żywo vs inertny `<span>`) | przetestowane (`render-section.test.tsx`, `component-library/test/sections.test.tsx`) |
+| Error boundary per-sekcja | `SectionErrorBoundary` w `packages/renderer` — nieznany typ renderuje czytelny fallback zamiast crashować, rzucający komponent też. Oznaczony `'use client'`, żeby renderer dał się zaimportować do Server Component (znalezisko spike'a — patrz `ARCHITEKTURA.md`) | przetestowane (`render-section.test.tsx`) |
+| Wspólny renderer edytor ↔ storefront | `apps/storefront-demo` renderuje ten sam dokument tym samym `renderPage` + `component-library` co canvas edytora | przetestowane (zweryfikowane w przeglądarce, obie aplikacje) |
 
 ## Status implementacji etapami
 
@@ -128,9 +133,9 @@ Legenda: `planowane` · `zaimplementowane` · `przetestowane`.
   `@editor/renderer` w trybie `edit`. Zweryfikowane w przeglądarce: drag&drop, undo, redo — wszystkie
   działają end-to-end. Odchylenie od opisu w `INSTRUKCJA_INTEGRACJI.md`: „Preview live w iframe" z
   tego etapu przesunięte do Etapu 8 (żywy podgląd/tryb `live` to jego właściwy zakres — tu sekcje
-  renderują się bezpośrednio w stronie, nie w iframe). Sekcje w `apps/editor/src/lib/sections.tsx`
-  to placeholdery, nie `component-library`.
-- **Etap 7** (bieżący): Panel właściwości ✅ — kliknięcie sekcji w canvasie ją zaznacza (obramowanie),
+  renderują się bezpośrednio w stronie, nie w iframe). ~~Sekcje to placeholdery~~ — od czasu spike'a
+  sekcje treści pochodzą z `packages/component-library`.
+- **Etap 7**: Panel właściwości ✅ — kliknięcie sekcji w canvasie ją zaznacza (obramowanie),
   `apps/editor/src/lib/fieldsFromSchema.ts` introspekuje Zod schema preferencji (string/number/
   boolean/enum — `.default()`/`.nullable()`/`.optional()` odwijane), generując formularz w
   `PropertyPanel.tsx`, spięty z `UpdateSectionCommand`. Zweryfikowane w przeglądarce: edycja pola
@@ -138,9 +143,17 @@ Legenda: `planowane` · `zaimplementowane` · `przetestowane`.
   Świadomie poza zakresem: pola typu tablica obiektów (np. `testimonials.items`, `faq.items`) —
   wymagają osobnego UI z powtarzalnymi polami, nie zwykłego inputu; panel właściwości dla bloków
   (UI) — `UpdateBlockCommand` gotowy i przetestowany w `editor-core`, ale brak demo w `apps/editor`
-  (seed nie ma bloków, `component-library` nie istnieje); `Add/DeleteSectionCommand` — panel edytuje
-  istniejące sekcje, nie dodaje/usuwa ich.
-- **Etap 8**: Live preview
+  (seed nie ma bloków).
+- **Etap 8**: Live preview ✅ — przełącznik Edytuj/Podgląd; w Podglądzie cała strona przez
+  `renderPage(..., { mode: 'live' })`, bez chrome edytora. Zweryfikowane w przeglądarce.
+- **Add/Delete sekcji** (bez numeru etapu — prerequisite realnego page buildera) ✅ —
+  `AddSectionCommand`/`DeleteSectionCommand` + paleta + 🗑. Bez tego edytor umiał tylko zmieniać
+  kolejność i edytować to, co akurat było w seedzie.
+- **`packages/component-library`** (bez numeru etapu; wymuszony przez spike, bo edytor i storefront
+  muszą renderować te same komponenty) ✅ częściowo — 7 z 14 sekcji treści + `registerContentSections()`.
+- **Integration spike** (`apps/storefront-demo`) ✅ — round-trip dokument JSON → `FilePageRepository`
+  → `renderPage(live)` → storefront, tymi samymi komponentami co canvas. Znaleziska (w tym blocker
+  `'use client'` na error boundary): patrz `ARCHITEKTURA.md` → „Wynik integration spike'a".
 - **Etap 9**: Draft/publish i historia
 - **Etap 10**: Media
 - **Etap 11**: Motywy

@@ -1,0 +1,64 @@
+{
+  "id": "page_home",
+  "storeId": "demo-store",
+  "themeId": "theme_demo",
+  "type": "homepage",
+  "slug": null,
+  "name": "Strona główna",
+  "sections": [
+    {
+      "id": "sec_hero",
+      "type": "hero",
+      "position": 0,
+      "preferences": {
+        "heading": "Kakałowy Sklepik",
+        "subheading": "Najlepsze kakao w mieście",
+        "backgroundImageAssetId": null
+      },
+      "style": { "topPadding": 48, "bottomPadding": 48, "topBorderWidth": 0, "bottomBorderWidth": 0 },
+      "blocks": []
+    },
+    {
+      "id": "sec_text",
+      "type": "rich_text",
+      "position": 1,
+      "preferences": {
+        "html": "<p>Ten dokument to zwykły plik JSON w repozytorium storefrontu. Edytor go zapisuje, storefront go renderuje — <strong>tym samym rendererem i tą samą biblioteką komponentów</strong>.</p>"
+      }
+    },
+    {
+      "id": "sec_products",
+      "type": "product_grid",
+      "position": 2,
+      "preferences": { "heading": "Polecane produkty", "taxonId": null, "limit": 3 }
+    },
+    {
+      "id": "sec_faq",
+      "type": "faq",
+      "position": 3,
+      "preferences": {
+        "heading": "Najczęstsze pytania",
+        "items": [
+          { "question": "Skąd pochodzi wasze kakao?", "answer": "Z certyfikowanych upraw w Ameryce Południowej." },
+          { "question": "Jak szybko wysyłacie?", "answer": "W ciągu 24 godzin w dni robocze." }
+        ]
+      }
+    },
+    {
+      "id": "sec_cta",
+      "type": "button",
+      "position": 4,
+      "preferences": { "label": "Zobacz wszystkie produkty", "href": "/produkty", "openInNewTab": false }
+    },
+    {
+      "id": "sec_news",
+      "type": "newsletter",
+      "position": 5,
+      "preferences": {
+        "heading": "Zapisz się na newsletter",
+        "subheading": "Nowości i promocje raz w miesiącu.",
+        "buttonLabel": "Subskrybuj"
+      }
+    }
+  ]
+}

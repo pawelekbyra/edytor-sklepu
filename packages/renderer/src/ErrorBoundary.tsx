@@ -1,3 +1,13 @@
+'use client';
+
+// React error boundaries must be class components, and class components only run in Client
+// Components. Without this directive the whole renderer becomes unimportable from a Server
+// Component (the storefront renders server-side), which would defeat the point of sharing one
+// renderer between the editor and the storefront.
+//
+// Marking just this module 'use client' keeps the boundary a small client island: a Server
+// Component may render it and pass server-rendered `children`/`fallback` in as props, so the
+// sections themselves (including async server components) still render on the server.
 import { Component, type ReactNode } from 'react';
 
 interface Props {

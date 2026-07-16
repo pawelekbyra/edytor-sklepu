@@ -27,7 +27,17 @@
   przeglądarce: edycja pola propaguje się na żywo, undo/redo działają. Poza zakresem: pola-tablice
   (testimonials/faq items), panel dla bloków (brak UI — `UpdateBlockCommand` gotowy w editor-core,
   ale nie zademonstrowany, bo seed nie ma bloków), Add/DeleteSectionCommand.
-- ⏳ Etapy 8–12: Do zrobienia
+- ✅ Etap 8: live preview — przełącznik Edytuj/Podgląd, `renderPage(..., { mode: 'live' })` bez
+  chrome edytora. Zweryfikowane w przeglądarce.
+- ✅ Add/Delete sekcji (bez numeru etapu, prerequisite realnego page buildera) —
+  `AddSectionCommand`/`DeleteSectionCommand` + paleta + 🗑, undo przywraca na oryginalny indeks.
+- ✅ `packages/component-library` (częściowo, 7 z 14 sekcji treści) + `registerContentSections()`.
+- ✅ **Integration spike** (`apps/storefront-demo`) — round-trip udowodniony: dokument JSON w repo →
+  `FilePageRepository` → `renderPage(live)` → storefront, tymi samymi komponentami co canvas
+  edytora. Sekcja commerce z własną, async-RSC implementacją hosta. Znaleziska (w tym naprawiony
+  blocker: `'use client'` na `SectionErrorBoundary`): `ARCHITEKTURA.md` → „Wynik integration spike'a".
+- ⏳ Etapy 9–12: Do zrobienia. **Kolejna decyzja należy do właściciela:** managed vs „własne repo"
+  jako ścieżka pierwsza (`ARCHITEKTURA.md` → „Plan dalszy" pkt 3).
 - ❌ Spree Rails usunięty — to jest czysty TypeScript edytor
 - 📌 Decyzja 2026-07-16: docelowo edytor trafia do **każdego** nowego sklepu w Store Factory, w
   obu trybach (`managed` i „własne repo"), jako jeden pakiet — patrz `ARCHITEKTURA.md` § „Dystrybucja"
@@ -130,11 +140,16 @@ planowanego `better-sqlite3` (brak toolchainu do kompilacji natywnej, zob. `ARCH
   w `fieldsFromSchema.ts`, wymagają osobnego repeatable-fields UI; `Add/DeleteSectionCommand` —
   panel edytuje istniejące sekcje, nie zarządza ich listą
 
-### Etap 8: Live preview
+### Etap 8: Live preview ✅
 **Pakiet:** `apps/editor`
 
-- Renderowanie przez `packages/renderer`
-- Tryb edycji (overlay "kliknij by edytować")
+- Renderowanie przez `packages/renderer` ✅ — `renderPage(page, { mode: 'live' })`
+- Przełącznik Edytuj/Podgląd; w Podglądzie znika chrome edytora (uchwyty, 🗑, paleta, panel
+  właściwości), a komponenty przełączają się w wariant „na żywo" ✅
+- Zamiast osobnego overlaya „kliknij by edytować": klik w sekcję na canvasie ją zaznacza (Etap 7),
+  a Podgląd jest osobnym trybem. Iframe uznany za zbędny — ten sam renderer i te same komponenty
+  po obu stronach dają zgodność bez izolacji ramką; spike (`apps/storefront-demo`) potwierdził to
+  wprost, renderując ten sam dokument w osobnej aplikacji.
 
 ### Etap 9: Draft/publish i historia
 **Pakiet:** `apps/editor`
@@ -311,7 +326,7 @@ export default async function Page({ params }: { params: { slug: string } }) {
 - [x] Etap 5: `packages/renderer` + testy ✓
 - [x] Etap 6: Canvas w `apps/editor` + testy ✓
 - [x] Etap 7: Panel właściwości + testy ✓
-- [ ] Etap 8: Live preview + testy ✓
+- [x] Etap 8: Live preview + testy ✓
 - [ ] Etap 9: Draft/publish + historia + testy ✓
 - [ ] Etap 10: Media upload + testy ✓
 - [ ] Etap 11: Motywy + testy ✓

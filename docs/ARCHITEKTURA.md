@@ -48,13 +48,14 @@ edytor-sklepu/
 ├── package.json
 ├── tsconfig.base.json
 ├── apps/
-│   └── editor/                          # Next.js — UI edytora
+│   ├── editor/                          # Next.js — UI edytora (canvas, panel, podgląd)
+│   └── storefront-demo/                 # Next.js — spike: storefront trybu „własne repo"
 └── packages/
     ├── schema/          # Zod schematy + typy TS
     ├── editor-core/     # komendy, undo/redo, walidacja (bez React)
-    ├── persistence/     # interfejsy repozytoriów + implementacja SQLite demo
+    ├── persistence/     # interfejsy repozytoriów + SQLite demo + FilePageRepository
     ├── renderer/        # rejestr typ→komponent, renderPage/renderSection
-    └── component-library/ # komponenty React
+    └── component-library/ # współdzielone komponenty sekcji treści
 ```
 
 Zależności są jednokierunkowe (bez cykli): `schema` jest liściem, na którym opierają się pozostałe
@@ -101,10 +102,14 @@ editor-core persistence  component-library
 - Funkcje `sectionStyles()`/`blockStyles()` (preferencje → CSS).
 - Współdzielony między edytorem a przyszłym storefrontem Next.js.
 
-### `packages/component-library` (nierozpoczęte)
-- **Sekcje treści** (bezstanowe, bez danych z zewnątrz) — mieszkają tutaj i są współdzielone:
-  `Hero`, `Header`, `Footer`, `ImageBanner`, `RichText`, `Newsletter`, `Testimonials`, `FAQ`,
-  `Video`, `Spacer`, `Columns`, `Button`, `Image`, `Navigation`.
+### `packages/component-library` (zaczęte — 7 z 14 sekcji treści)
+- **Sekcje treści** (bezstanowe, bez danych z zewnątrz) — mieszkają tutaj i są współdzielone.
+  Gotowe: `Hero`, `RichText`, `Newsletter`, `ImageBanner`, `Faq`, `Spacer`, `ButtonSection`
+  (+ `registerContentSections()` — jeden punkt rejestracji, wołany przez każdy runtime).
+  Planowane: `Header`, `Footer`, `Testimonials`, `Video`, `Columns`, `Image`, `Navigation`.
+- **Bez `'use client'` i bez handlerów zdarzeń** — komponenty muszą działać zarówno jako Server
+  Components (storefront), jak i w drzewie klienta (canvas). Różnice edit/live wyrażane
+  deklaratywnie przez prop `mode` (znalezisko 3 ze spike'a).
 - **Sekcje commerce** (`ProductGrid`, `CategoryGrid`) — NIE mieszkają tutaj jako gotowe komponenty,
   bo wymagają warstwy danych (Store API). Są slotem rejestru: host (storefront) rejestruje własną
   implementację spiętą ze swoim data layerem, a edytor rejestruje statyczny placeholder do podglądu
@@ -255,6 +260,32 @@ produktów w `sklepikFront`:
   daje te same gwarancje transakcyjne SQL bez zależności natywnej. Do rozważenia przy realnej
   integracji z serwerem produkcyjnym, jeśli tamten wymaga innego silnika.
 
+## Wynik integration spike'a (2026-07-16) — teza potwierdzona, trzy znaleziska
+
+Spike (`apps/storefront-demo`) wykonany. **Round-trip udowodniony**: dokument strony jako JSON w
+repo → `FilePageRepository` → `renderPage(..., { mode: 'live' })` → opublikowana strona, z sekcjami
+treści z `@editor/component-library` — tymi samymi, które renderuje canvas edytora. Bez dotykania
+produkcyjnego `sklepik`, bez multi-tenancy. Podział treść/commerce działa w praktyce: ten sam
+`component_key` `product_grid` ma statyczny podgląd w edytorze i implementację z prawdziwymi danymi
+w storefroncie.
+
+Znaleziska, których nie dało się przewidzieć bez zbudowania tego:
+
+1. **`SectionErrorBoundary` blokował cały renderer po stronie serwera.** Error boundary musi być
+   klasą, a klasy działają tylko w Client Components — więc `import { renderPage } from
+   '@editor/renderer'` w Server Component storefrontu wysadzał build. Naprawione: `'use client'`
+   na samym module boundary (mała wyspa kliencka; sekcje, łącznie z async server components, nadal
+   renderują się na serwerze). **To był realny blocker dla Frontu C** — dobrze, że wyszedł na
+   spike'u, a nie przy integracji z produkcyjnym `sklepikFront`.
+2. **Sekcje commerce mogą być async React Server Components** i same pobierać dane — rejestr to
+   wytrzymuje. Ale `SectionComponent` to `ComponentType<...>`, które nie obejmuje komponentów
+   async, więc host musi rzutować. **Do zrobienia:** poszerzyć typy renderera, żeby nie zmuszać
+   każdego storefrontu do castowania.
+3. **Komponenty współdzielone muszą być wolne od handlerów zdarzeń**, żeby działać i jako Server
+   Components (storefront), i w drzewie klienta (canvas). Rozwiązane bez `'use client'`: różnice
+   edit/live wyrażone deklaratywnie (`<a href>` na żywo vs inertny `<span>` na canvasie, `disabled`
+   na formularzu newslettera) zamiast blokowania nawigacji handlerem.
+
 ## Plan dalszy (zrewidowany 2026-07-16)
 
 Rewizja wynika z ustalenia, że integracja to trzy fronty (wyżej). Największe ryzyko architektoniczne
@@ -264,30 +295,28 @@ przekrojem, zanim zainwestujesz w kolejne izolowane etapy.
 
 Rekomendowana kolejność:
 
-1. **Etap 8 — Live preview** (tanio, i tak potrzebne). Tryb `live` vs `edit` w rendererze bezpośrednio
-   ćwiczy renderer w trybie, w którym użyje go storefront — dobra rozgrzewka przed Frontem C.
-2. **Integration spike (NOWY, przed 9–12) — najtańsza walidacja całości.** Jeden pionowy przekrój:
-   - jeden typ strony (homepage), **tylko sekcje treści** (Hero/RichText/Newsletter — bez commerce),
-   - dokument trzymany jako JSON przez `FilePageRepository` (tryb „własne repo"),
-   - minimalna trasa Next.js w osobnym storefroncie demo renderująca przez `@editor/renderer`.
-   - Dowodzi round-tripu edytor → dokument → storefront **bez dotykania produkcyjnego `sklepik`** i
-     bez multi-tenancy. Jeśli tu coś w architekturze nie gra, dowiadujesz się to najmniejszym kosztem.
-3. **Decyzja managed vs „własne repo" jako ścieżka pierwsza** — na podstawie tego, co pokaże spike.
-   „Własne repo" jest tańsze (bez Frontu A i bez multi-tenancy), więc domyślnie to ono.
-4. **Etapy 9–12** (draft/publish w UI, media, motywy, pełna zgodność) — po/równolegle, teraz
-   ugruntowane realnym szwem, nie budowane „na wiarę".
+1. ~~**Etap 8 — Live preview**~~ ✅ zrobione — tryb Podgląd renderuje stronę przez `renderPage`
+   w `mode: 'live'` bez chrome edytora.
+2. ~~**Integration spike**~~ ✅ zrobione — patrz „Wynik integration spike'a" wyżej. Teza
+   potwierdzona; trzy znaleziska, w tym jeden realny blocker Frontu C (naprawiony).
+3. **Decyzja managed vs „własne repo" jako ścieżka pierwsza** — ⬅️ **tu jesteśmy, decyzja
+   właściciela.** Spike pokazał, że „własne repo" działa i jest tańsze (bez Frontu A i bez
+   multi-tenancy), więc domyślnie to ono — ale to decyzja produktowa, nie techniczna.
+4. **Domknięcie „10/10" edytora** — braki, które realnie odróżniają dobry page builder od demo:
+   - zapis zmian z powrotem do persistence (dziś canvas edytuje stan w pamięci — Etap 9),
+   - draft/publish + historia w UI (`VersionRepository` już to obsługuje, brak spięcia),
+   - media (Etap 10) i motywy (Etap 11) — repozytoria gotowe, brak UI,
+   - pola-tablice w panelu właściwości (`testimonials.items`, `faq.items`),
+   - reszta `component-library` (Header, Footer, Testimonials, Video, Columns, Image, Navigation),
+   - poszerzenie typów renderera o async server components (znalezisko 2).
 5. **Front A (backend `sklepik`)** — dopiero jeśli/gdy wybrany jest tryb `managed`. Duży, dotyka
-   produkcji; nie zaczynać, dopóki spike nie potwierdzi kształtu kontraktu i nie ma decyzji o managed.
-
-Kolejność Etapów 9–12 vs spike nie jest sztywna — spike można wpleść równolegle do 9–12, bo dotyka
-innych plików (nowy `FilePageRepository` + demo storefront), nie koliduje z pracą w `apps/editor`.
+   produkcji; nie zaczynać bez decyzji z pkt 3.
 
 ## Co NIE wchodzi w zakres (nadal)
 
-- Prawdziwa logika commerce (koszyk, checkout, płatności) — tylko demo/placeholdery.
-- `packages/component-library` z prawdziwymi komponentami — nierozpoczęte; `apps/editor` renderuje
-  na razie placeholdery.
-- Faktyczny import do produkcyjnego `sklepik`/`sklepikFront` — świadomie po spike'u i po decyzji o
-  trybie (patrz „Plan dalszy"), nie wcześniej.
+- Prawdziwa logika commerce (koszyk, checkout, płatności) — tylko demo.
+- Pełna `component-library` — 7 z 14 sekcji treści gotowych, reszta planowana (patrz wyżej).
+- Faktyczny import do produkcyjnego `sklepik`/`sklepikFront` — spike zrobiony na osobnym
+  `apps/storefront-demo`; wejście w produkcję czeka na decyzję o trybie (patrz „Plan dalszy" pkt 3).
 - Model bezpieczeństwa/sandbox custom code — **rozstrzygnięty jako zbędny dla trybu własnego repo**
   (patrz „Dystrybucja"); dla trybu `managed` to osobna, późniejsza decyzja, nie blocker teraz.

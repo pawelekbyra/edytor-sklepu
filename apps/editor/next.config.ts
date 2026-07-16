@@ -6,7 +6,13 @@ import type { NextConfig } from 'next';
 // symlinks workspace packages there) without `transpilePackages`, and it won't map a literal
 // `.js` specifier onto a same-named `.ts`/`.tsx` file without `resolve.extensionAlias`.
 const nextConfig: NextConfig = {
-  transpilePackages: ['@editor/schema', '@editor/editor-core', '@editor/persistence', '@editor/renderer'],
+  transpilePackages: [
+    '@editor/schema',
+    '@editor/editor-core',
+    '@editor/persistence',
+    '@editor/renderer',
+    '@editor/component-library',
+  ],
   webpack(config) {
     config.resolve.extensionAlias = {
       ...config.resolve.extensionAlias,
