@@ -6,8 +6,31 @@
 ## Status obecny (main branch)
 
 - ✅ Etapy 1–3: TypeScript monorepo scaffold, `packages/schema` z testami (13 ✓), dokumentacja PL
-- ⏳ Etapy 4–12: Do zrobienia
+- ✅ Etap 4: `packages/persistence` — `PageRepository`, `ThemeRepository`, `VersionRepository`,
+  `MediaRepository`, `DemoCommerceProvider` na `node:sqlite` (32 testy ✓, w tym dedykowany
+  `store-isolation.test.ts` na izolację `storeId`). Nieużyte z Etapu 4: `duplicate()`, bootstrap
+  domyślnego motywu — świadomie odłożone (patrz `MACIERZ_ZGODNOSCI.md`).
+- ✅ Etap 5: `packages/renderer` — `registerSection`/`registerBlock`,
+  `renderPage`/`renderSection`/`renderBlock`, `sectionStyles`/`blockStyles`, `SectionErrorBoundary`
+  (15 testów ✓, Vitest + React Testing Library + jsdom). Testowane na atrapach komponentów —
+  `packages/component-library` (prawdziwe sekcje: Hero, Header, ProductGrid, itd.) to osobny,
+  nierozpoczęty pakiet.
+- ✅ `packages/editor-core` (bez numeru etapu tutaj, ale twardy prerequisite Etapu 6 — patrz
+  `ARCHITEKTURA.md`) — `Command`, `CommandStack` (execute/undo/redo), `MoveSectionCommand`,
+  `MoveBlockCommand`, `UpdateSectionCommand`, `UpdateBlockCommand` (24 testy ✓). Poza zakresem:
+  Add/Delete/Publish/Duplicate*Command.
+- ✅ Etap 6: `apps/editor` — canvas z `@dnd-kit/sortable`, Cofnij/Ponów przez `useEditorStore`,
+  render przez `@editor/renderer` w trybie `edit`. Zweryfikowane w przeglądarce (drag&drop, undo,
+  redo — wszystkie działają). „Preview live w iframe" z opisu tego etapu przesunięte do Etapu 8.
+- ✅ Etap 7: panel właściwości w `apps/editor` — klik na sekcję ją zaznacza, formularz generowany
+  z Zod schema (`fieldsFromPreferencesSchema`) spięty z `UpdateSectionCommand`. Zweryfikowane w
+  przeglądarce: edycja pola propaguje się na żywo, undo/redo działają. Poza zakresem: pola-tablice
+  (testimonials/faq items), panel dla bloków (brak UI — `UpdateBlockCommand` gotowy w editor-core,
+  ale nie zademonstrowany, bo seed nie ma bloków), Add/DeleteSectionCommand.
+- ⏳ Etapy 8–12: Do zrobienia
 - ❌ Spree Rails usunięty — to jest czysty TypeScript edytor
+- 📌 Decyzja 2026-07-16: docelowo edytor trafia do **każdego** nowego sklepu w Store Factory, w
+  obu trybach (`managed` i „własne repo"), jako jeden pakiet — patrz `ARCHITEKTURA.md` § „Dystrybucja"
 
 ## Etapy do dokończenia
 
@@ -53,30 +76,59 @@ export interface CommerceProvider {
 }
 ```
 
-**Implementacja demo:** `better-sqlite3`, `.data/editor.db`
+**Implementacja demo:** `node:sqlite` (`DatabaseSync`), w pamięci w testach — zmiana z pierwotnie
+planowanego `better-sqlite3` (brak toolchainu do kompilacji natywnej, zob. `ARCHITEKTURA.md`)
 
-**Testy:** Vitest integracyjne (CRUD, transakcje, izolacja)
+**Testy:** Vitest integracyjne (CRUD, transakcje, izolacja) — ✅ zrobione, 32 testy
 
-### Etap 5: Renderer komponentów
+### Etap 5: Renderer komponentów ✅
 **Pakiet:** `packages/renderer`
 
-- Rejestr `registerSection(type, Component)`
-- `renderPage(page, { mode, storeId })`
-- `renderSection(section, { mode })`
-- Style helpers: `sectionStyles()`, `blockStyles()`
+- Rejestr `registerSection(type, Component)` / `registerBlock(type, Component)` ✅
+- `renderPage(page, { mode })` — bez osobnego `storeId`, bo `Page` już je niesie (`page.storeId`) ✅
+- `renderSection(section, { mode })` + symetryczny `renderBlock(block, { mode })` ✅
+- Style helpers: `sectionStyles()`, `blockStyles()` ✅
+- `SectionErrorBoundary` — nieznany typ / rzucający komponent nie crashuje reszty strony ✅
+- Testowane na atrapach; prawdziwe komponenty czekają na `packages/component-library` (osobny,
+  nierozpoczęty pakiet — nie jest częścią żadnego ponumerowanego etapu w tym dokumencie)
 
-### Etap 6: Canvas i drag&drop
+### Etap 6: Canvas i drag&drop ✅
+**Pakiety:** `packages/editor-core` (prerequisite, brak własnego numeru etapu) + `apps/editor`
+
+- `Command`/`CommandStack` (execute/undo/redo), `MoveSectionCommand`, `MoveBlockCommand` w
+  `packages/editor-core` — 15 testów ✅
+- `@dnd-kit/core`+`@dnd-kit/sortable` do sekcji w `apps/editor` (bloki wewnątrz sekcji: prymityw
+  gotowy w editor-core, UI do przeciągania bloków nie zrobione — czeka na panel właściwości/realne
+  komponenty z blokami) ✅
+- `MoveSectionCommand` spięty z drag&drop przez `useEditorStore`, Cofnij/Ponów w UI ✅ — zweryfikowane
+  w przeglądarce
+- Next.js + webpack wymagał dwóch poprawek żeby w ogóle wystartować z pakietami workspace bez builda:
+  `transpilePackages` (webpack domyślnie nie przetwarza TS wewnątrz `node_modules`, gdzie pnpm
+  linkuje pakiety workspace) i `resolve.extensionAlias` (webpack nie mapuje samodzielnie importu
+  `./Foo.js` na plik `./Foo.ts`, w przeciwieństwie do `tsc`/Vitest) — zob. `apps/editor/next.config.ts`
+- `@dnd-kit` generuje id (`aria-describedby`) które nie są stabilne między SSR a pierwszym renderem
+  klienta → hydration mismatch w Next.js; naprawione przez odłożenie renderowania `DndContext` do
+  czasu po zamontowaniu (`apps/editor/src/components/Canvas.tsx`), standardowy wzorzec dla
+  bibliotek nie w pełni kompatybilnych z SSR
+- **Poza zakresem, przesunięte:** „Preview live w iframe" → Etap 8 (to jego właściwy zakres: tryb
+  `live` vs `edit`); tu sekcje renderują się wprost na stronie przez `renderSection(..., { mode: 'edit' })`
+
+### Etap 7: Panel właściwości ✅
 **Pakiet:** `apps/editor`
 
-- `@dnd-kit/core` do sekcji/bloków
-- `MoveSectionCommand`, `MoveBlockCommand` z undo/redo
-- Preview live w iframe
-
-### Etap 7: Panel właściwości
-**Pakiet:** `apps/editor`
-
-- Generowanie formularzy ze schematów Zod (`packages/schema`)
-- `UpdateSectionCommand`, `UpdateBlockCommand`
+- Generowanie formularzy ze schematów Zod (`packages/schema`) ✅ — `src/lib/fieldsFromSchema.ts`
+  introspekuje `ZodObject.shape` per pole (`ZodDefault`/`ZodNullable`/`ZodOptional` odwijane do typu
+  bazowego), mapuje `ZodString`→text, `ZodNumber`→number, `ZodBoolean`→checkbox, `ZodEnum`→select;
+  `src/lib/sectionSchemas.ts` buduje mapę `SectionType → preferencesSchema` wprost z
+  `SectionSchema.options` (bez ręcznego duplikowania typów)
+- `UpdateSectionCommand` ✅ (`packages/editor-core`) — spięty z panelem, klik na sekcję w canvasie
+  ją zaznacza, zmiana pola propaguje się na żywo, undo/redo działają — zweryfikowane w przeglądarce
+- `UpdateBlockCommand` ✅ gotowy i przetestowany w `packages/editor-core`, ale **brak UI** w
+  `apps/editor` — demo seed nie ma żadnych bloków i nie ma jeszcze `component-library`, więc nie
+  było czego zademonstrować; UI dla bloków to naturalne rozszerzenie gdy jedno z tamtych się pojawi
+- Poza zakresem: pola-tablice obiektów (`testimonials.items`, `faq.items`) — `kind: 'unsupported'`
+  w `fieldsFromSchema.ts`, wymagają osobnego repeatable-fields UI; `Add/DeleteSectionCommand` —
+  panel edytuje istniejące sekcje, nie zarządza ich listą
 
 ### Etap 8: Live preview
 **Pakiet:** `apps/editor`
@@ -255,10 +307,10 @@ export default async function Page({ params }: { params: { slug: string } }) {
 
 ## Checklistę do etapu 13 (gdy będzie pełna zgodność)
 
-- [ ] Etap 4: `packages/persistence` + testy ✓
-- [ ] Etap 5: `packages/renderer` + testy ✓
-- [ ] Etap 6: Canvas w `apps/editor` + testy ✓
-- [ ] Etap 7: Panel właściwości + testy ✓
+- [x] Etap 4: `packages/persistence` + testy ✓
+- [x] Etap 5: `packages/renderer` + testy ✓
+- [x] Etap 6: Canvas w `apps/editor` + testy ✓
+- [x] Etap 7: Panel właściwości + testy ✓
 - [ ] Etap 8: Live preview + testy ✓
 - [ ] Etap 9: Draft/publish + historia + testy ✓
 - [ ] Etap 10: Media upload + testy ✓

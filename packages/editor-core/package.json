@@ -1,0 +1,20 @@
+{
+  "name": "@editor/editor-core",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Command pattern + CommandStack (undo/redo) for page mutations — no React, no persistence, pure TS. See ARCHITEKTURA.md.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@editor/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

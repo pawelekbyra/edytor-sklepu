@@ -1,0 +1,29 @@
+{
+  "name": "@editor/renderer",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Component registry + renderPage/renderSection/renderBlock — shared between the editor's live canvas and the future Next.js storefront (see ARCHITEKTURA.md).",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@editor/schema": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.0.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "jsdom": "^25.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}

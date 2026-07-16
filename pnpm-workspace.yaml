@@ -3,3 +3,7 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+  # sharp is Next.js's optional native image-optimizer for next/image — not used in this demo
+  # (no <Image> components), and like better-sqlite3 it needs node-gyp/MSVC which this machine
+  # lacks. Declining the build script; Next.js falls back to the unoptimized image path if needed.
+  sharp: false

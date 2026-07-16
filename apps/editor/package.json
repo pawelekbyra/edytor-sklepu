@@ -1,0 +1,31 @@
+{
+  "name": "@editor/app",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Next.js editor UI — canvas + drag&drop (Etap 6), property panel (Etap 7). Wraps @editor/editor-core's CommandStack, renders through @editor/renderer, persists through @editor/persistence's SQLite demo.",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3100",
+    "build": "next build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dnd-kit/core": "^6.1.0",
+    "@dnd-kit/sortable": "^8.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@editor/editor-core": "workspace:*",
+    "@editor/persistence": "workspace:*",
+    "@editor/renderer": "workspace:*",
+    "@editor/schema": "workspace:*",
+    "next": "^15.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
+  }
+}
