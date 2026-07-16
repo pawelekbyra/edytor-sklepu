@@ -12,3 +12,6 @@ export { SQLiteThemeRepository } from './sqlite/SQLiteThemeRepository.js';
 export { SQLiteVersionRepository } from './sqlite/SQLiteVersionRepository.js';
 export { SQLiteMediaRepository } from './sqlite/SQLiteMediaRepository.js';
 export { DemoCommerceProvider } from './sqlite/DemoCommerceProvider.js';
+
+// "Własne repo" mode: page documents as version-controllable JSON files (see ARCHITEKTURA.md).
+export { FilePageRepository } from './file/FilePageRepository.js';
