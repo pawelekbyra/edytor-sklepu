@@ -11,10 +11,11 @@ import {
 } from '@editor/editor-core';
 import { renderPage, renderSection } from '@editor/renderer';
 import type { Page, Section, SectionType } from '@editor/schema';
-import { type CSSProperties, useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useState, useTransition } from 'react';
+import { savePage } from '../app/actions';
 import { useEditorStore } from '../hooks/useEditorStore';
 import { ADDABLE_SECTION_TYPES, createSection } from '../lib/createSection';
-import '../lib/sections'; // registers demo placeholder components as a side effect
+import '../lib/sections'; // registers section components as a side effect
 import { PropertyPanel } from './PropertyPanel';
 
 function SortableSection({
@@ -100,11 +101,31 @@ export function Canvas({ initialPage }: { initialPage: Page }) {
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   const selectedSection = orderedSections.find((section) => section.id === selectedId) ?? null;
 
+  const [isSaving, startSaving] = useTransition();
+  const [saveState, setSaveState] = useState<{ status: 'idle' | 'saved' | 'error'; message?: string }>({
+    status: 'idle',
+  });
+
+  function handleSave() {
+    startSaving(async () => {
+      try {
+        await savePage(page);
+        setSaveState({ status: 'saved' });
+      } catch (err) {
+        setSaveState({ status: 'error', message: err instanceof Error ? err.message : 'Nie udało się zapisać' });
+      }
+    });
+  }
+
   // dnd-kit generates internal ids (aria-describedby, etc.) that aren't guaranteed to match
   // between SSR and the client's first render → hydration mismatch. Deferring DndContext to after
   // mount is the standard pattern for client-only interactive libraries.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // Any edit invalidates a previous "saved" confirmation — `page` gets a new identity on every
+  // command, while saving leaves it untouched, so this fires exactly on edits.
+  useEffect(() => setSaveState({ status: 'idle' }), [page]);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -139,6 +160,15 @@ export function Canvas({ initialPage }: { initialPage: Page }) {
         ↷ Ponów
       </button>
       <span style={{ flex: 1 }} />
+      {saveState.status === 'saved' && <span style={{ fontSize: 12, color: '#2a7' }}>✓ zapisano</span>}
+      {saveState.status === 'error' && (
+        <span style={{ fontSize: 12, color: '#c00' }} title={saveState.message}>
+          ✗ błąd zapisu
+        </span>
+      )}
+      <button type="button" onClick={handleSave} disabled={isSaving} data-testid="save">
+        {isSaving ? '… Zapisywanie' : '💾 Zapisz'}
+      </button>
       <button
         type="button"
         onClick={() => setViewMode((m) => (m === 'edit' ? 'preview' : 'edit'))}

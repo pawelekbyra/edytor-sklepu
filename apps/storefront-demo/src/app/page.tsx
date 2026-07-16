@@ -7,6 +7,11 @@ import '../lib/sections'; // registers content + commerce sections for THIS runt
 // `PageRepository` interface the editor uses against SQLite/an API (docs/ARCHITEKTURA.md).
 const pages = new FilePageRepository(join(process.cwd(), 'content'));
 
+// Demo convenience: re-read the document per request so an edit saved in the editor shows up on
+// reload. A real "własne repo" storefront would render this statically at build/deploy time —
+// publishing there means a commit + redeploy, not a live re-read.
+export const dynamic = 'force-dynamic';
+
 export default async function Home() {
   const page = await pages.read('demo-store', 'page_home');
   if (!page) return <main style={{ padding: 24 }}>Brak dokumentu strony.</main>;
