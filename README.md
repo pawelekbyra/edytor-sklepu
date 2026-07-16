@@ -10,8 +10,14 @@ Niezależny wizualny edytor stron i motywów dla ekosystemu `sklepik`, rozwijany
 
 ## Stan projektu (etapy 1–8 z 12 + tryb „własne repo")
 
+**Zaczynasz tu pracę (człowiek albo agent)? Czytaj [`docs/ROADMAPA.md`](docs/ROADMAPA.md)** — co
+zostało do wdrożenia, podjęte decyzje, pułapki środowiskowe i otwarte pytania.
+
 Szczegółowy, wiersz-po-wierszu status każdej funkcji: [`docs/MACIERZ_ZGODNOSCI.md`](docs/MACIERZ_ZGODNOSCI.md).
 Plan integracji z `pawelekbyra/sklepik`: [`docs/INSTRUKCJA_INTEGRACJI.md`](docs/INSTRUKCJA_INTEGRACJI.md).
+
+> ⚠️ To jest **zweryfikowany prototyp, nie system produkcyjny**. Edytor nie jest podłączony do
+> `sklepik`/`sklepikFront` i **nie ma żadnej autoryzacji** — patrz `ROADMAPA.md` §3.
 
 ### Gotowe
 
@@ -66,7 +72,7 @@ Pełny opis architektury (docelowej i bieżącej): [`docs/ARCHITEKTURA.md`](docs
 
 ```text
 edytor-sklepu/
-├── docs/                    # architektura, macierz zgodności, plan integracji, audyt Spree
+├── docs/                    # ROADMAPA (zacznij tu), architektura, macierz zgodności, audyt Spree
 ├── apps/
 │   └── editor/              # Next.js — canvas, panel właściwości
 └── packages/

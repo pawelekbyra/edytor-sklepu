@@ -40,6 +40,7 @@ nowa sekcja „Integracja z ekosystemem sklepik" niżej, która zastępuje upros
 ```
 edytor-sklepu/
 ├── docs/
+│   ├── ROADMAPA.md                      # co zostało do wdrożenia + pułapki (zacznij tu)
 │   ├── ARCHITEKTURA.md                  # ten plik — architektura + plan integracji
 │   ├── MACIERZ_ZGODNOSCI.md             # status funkcji wiersz-po-wierszu
 │   ├── INSTRUKCJA_INTEGRACJI.md         # krok-po-kroku plan pracy nad pakietami
@@ -243,6 +244,41 @@ Zaimplementowane: `GitHubPageRepository` (GitHub contents API, `sha` przy zapisi
 edycja jest odrzucana, nie po cichu nadpisywana). Przełączenie edytora z trybu lokalnego na
 produkcyjny to **wyłącznie zmienne środowiskowe** (`apps/editor/.env.example`) — żaden kod canvasu,
 komend ani renderera o tym nie wie. To właśnie po to jest ta abstrakcja.
+
+## Gdzie mieszka edytor: trasa `/admin` w repo każdego sklepu
+
+**Decyzja właściciela (2026-07-16).** Edytor jest dystrybuowany jako wersjonowany pakiet
+(`@sklepik/page-builder`) i montowany jako trasa `/admin` w aplikacji każdego sklepu — nie jako
+centralna aplikacja platformy. Właściciel loguje się „do swojego sklepu" i tam edytuje.
+
+Rozważane i odrzucone: (1) edytor wbudowany w panel `sklepik` (dzisiejszy React SPA), (2) osobna
+centralna aplikacja edytora uwierzytelniająca się do `sklepik`.
+
+**Argument rozstrzygający — sekcje customowe.** W trybie „własne repo" właściciel może rejestrować
+własne komponenty sekcji bez sandboxa (patrz „Dystrybucja"), a rejestr jest **per-runtime**.
+Centralny edytor ma w swoim runtime wyłącznie standardową bibliotekę platformy — sekcji customowej
+sklepu **nie ma czym wyrenderować**; pokazałby „Unknown section type" na stronie klienta, który
+zapłacił właśnie za tę niezależność. Jedyne wyjście to iframe do prawdziwego storefrontu +
+protokół `postMessage` (model Shopify) — cała warstwa do zbudowania i utrzymania. Edytor w repo
+sklepu dzieli runtime ze storefrontem, więc sekcje customowe pojawiają się w canvasie i palecie
+same z siebie. Decyzja o braku sandboxa praktycznie wymusza ten wariant.
+
+**Argument drugi — zasięg wycieku tokena.** Centralny edytor potrzebowałby prawa zapisu do repo
+*każdego* sklepu: jeden wyciek = wszystkie sklepy. Edytor w repo sklepu ma token do jednego repo.
+
+**Koszt „każdy sklep niesie swój edytor" jest już rozwiązany** przez `store-factory.md`: wspólna
+logika jest konsumowana jako wersjonowane pakiety `@sklepik/*` z Update Botem otwierającym PR-y,
+nigdy kopiowana. Edytor to kolejny taki pakiet. Spełnia to też DoD Store Factory dosłownie —
+oddanie repo daje klientowi sklep, treść **i** edytor.
+
+**Koszt, który zostaje:** dwa logowania (panel platformy po commerce, `/admin` sklepu po wygląd).
+Do rozwiązania przez **SSO z panelu** `sklepik` (klik „Edytuj wygląd" → `/admin` sklepu z tokenem →
+weryfikacja przez Admin API i sprawdzenie praw do tego `store_id`). Role per sklep już istnieją
+(`multi-store-support.md` Faza 1) — autoryzacji nie wymyślamy, podpinamy się pod istniejącą.
+
+**Świadomie przyjęte ryzyko:** panel admina żyje w aplikacji publicznej sklepu, a token GitHuba
+siedzi w jej env — dziura w storefroncie oznacza dostęp do tokena. Zasięg ograniczony do jednego
+sklepu, ale `/admin` musi stać za twardą bramką.
 
 ## Podział sekcji: treść vs commerce
 
