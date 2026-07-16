@@ -14,4 +14,8 @@ export { SQLiteMediaRepository } from './sqlite/SQLiteMediaRepository.js';
 export { DemoCommerceProvider } from './sqlite/DemoCommerceProvider.js';
 
 // "Własne repo" mode: page documents as version-controllable JSON files (see ARCHITEKTURA.md).
+// FilePageRepository = local disk (dev/demo); GitHubPageRepository = the shop's real repo,
+// where publishing is a commit and the deploy that follows.
 export { FilePageRepository } from './file/FilePageRepository.js';
+export { GitHubPageRepository } from './github/GitHubPageRepository.js';
+export type { GitHubPageRepositoryOptions } from './github/GitHubPageRepository.js';

@@ -218,15 +218,31 @@ dostajesz".
 To rozwidlenie mapuje się 1:1 na dwa tryby dystrybucji i jest właśnie tym, co uzasadnia
 interfejsową abstrakcję `packages/persistence`:
 
-| Tryb | Źródło prawdy dokumentów | Implementacja `PageRepository` | Front C renderuje z |
-|---|---|---|---|
-| `managed` | Postgres w `sklepik` (Front A), jeden współdzielony storefront rozpoznający sklep po `Host` | `SklepikApiPageRepository` (HTTP) | Admin/Store API |
-| „własne repo" | pliki JSON w repo storefrontu, wersjonowane gitem, deployowane z witryną | `FilePageRepository` (odczyt z repo) | własnego repo |
+**Ważne, bo łatwo to pomylić:** backend commerce (`sklepik`) jest **zawsze** — w każdym trybie
+trzyma produkty, ceny, koszyk, zamówienia, po `store_id`. Poniższe rozwidlenie dotyczy **wyłącznie
+dokumentów stron** (jakie sekcje, w jakiej kolejności, z jakim tekstem), czyli tego, co produkuje
+edytor. „Bez Frontu A" nie znaczy „bez backendu" — znaczy „bez dobudowywania w `sklepik` nowych
+tabel i endpointów na dokumenty stron".
 
-Wniosek strategiczny: **tryb „własne repo" jest tańszy do udowodnienia najpierw**, bo nie wymaga ani
-Frontu A (backendu), ani multi-tenancy storefrontu — to po prostu „ten jeden storefront renderuje
-dokumenty ze swojego repo". `sklepikFront` jest de facto szablonem storefrontu dla trybu „własne
-repo". Dlatego pierwsza integracja powinna iść tą ścieżką (patrz „Plan dalszy").
+| Tryb | Źródło prawdy **dokumentów stron** | Implementacja `PageRepository` | Publikacja |
+|---|---|---|---|
+| `managed` | Postgres w `sklepik` (Front A), jeden współdzielony storefront po `Host` | `SklepikApiPageRepository` (HTTP) | natychmiastowa |
+| „własne repo" | pliki JSON w repo storefrontu, wersjonowane gitem | `GitHubPageRepository` (commit) — lokalnie `FilePageRepository` | commit + redeploy (~1–2 min) |
+
+**Decyzja właściciela (2026-07-16): „własne repo" (opcja A).** Uzasadnienie: zgadza się z
+`store-factory.md`, gdzie `independent_storefront` (własne repo + Vercel, wspólny Spree) jest
+**modelem domyślnym**, a `managed` pozostaje otwartym pytaniem („czy w ogóle zostanie zbudowany").
+Spełnia też Definition of Done Store Factory — *„repozytorium sklepu można przekazać klientowi i
+uruchomić wyłącznie z dokumentacji"*: skoro treść jest w repo, oddanie repo oddaje **wszystko**.
+Gdyby dokumenty stron siedziały w bazie platformy, samo repo byłoby niepełnym sklepem.
+
+Koszt tej decyzji, świadomie zaakceptowany: publikacja to commit + redeploy (~1–2 min zamiast
+sekundy) i edytor musi mieć token z prawem zapisu do repo sklepu.
+
+Zaimplementowane: `GitHubPageRepository` (GitHub contents API, `sha` przy zapisie → równoległa
+edycja jest odrzucana, nie po cichu nadpisywana). Przełączenie edytora z trybu lokalnego na
+produkcyjny to **wyłącznie zmienne środowiskowe** (`apps/editor/.env.example`) — żaden kod canvasu,
+komend ani renderera o tym nie wie. To właśnie po to jest ta abstrakcja.
 
 ## Podział sekcji: treść vs commerce
 
@@ -299,11 +315,14 @@ Rekomendowana kolejność:
    w `mode: 'live'` bez chrome edytora.
 2. ~~**Integration spike**~~ ✅ zrobione — patrz „Wynik integration spike'a" wyżej. Teza
    potwierdzona; trzy znaleziska, w tym jeden realny blocker Frontu C (naprawiony).
-3. **Decyzja managed vs „własne repo" jako ścieżka pierwsza** — ⬅️ **tu jesteśmy, decyzja
-   właściciela.** Spike pokazał, że „własne repo" działa i jest tańsze (bez Frontu A i bez
-   multi-tenancy), więc domyślnie to ono — ale to decyzja produktowa, nie techniczna.
+3. ~~**Decyzja managed vs „własne repo"**~~ ✅ **rozstrzygnięte: „własne repo" (opcja A)** —
+   patrz „Kto jest źródłem prawdy" wyżej. `GitHubPageRepository` zaimplementowany i przetestowany;
+   round-trip edycja→zapis→storefront zweryfikowany w przeglądarce (lokalnie, przez
+   `FilePageRepository`).
 4. **Domknięcie „10/10" edytora** — braki, które realnie odróżniają dobry page builder od demo:
-   - zapis zmian z powrotem do persistence (dziś canvas edytuje stan w pamięci — Etap 9),
+   - ~~zapis zmian~~ ✅ zrobione (przycisk Zapisz → Server Action → `PageRepository`),
+   - **pierwsze realne uruchomienie `GitHubPageRepository`** na repo sklepu (wymaga tokena i repo
+     — konfiguracja właściciela; kod gotowy, ale nigdy nie odpalony przeciw prawdziwemu GitHubowi),
    - draft/publish + historia w UI (`VersionRepository` już to obsługuje, brak spięcia),
    - media (Etap 10) i motywy (Etap 11) — repozytoria gotowe, brak UI,
    - pola-tablice w panelu właściwości (`testimonials.items`, `faq.items`),

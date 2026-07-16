@@ -68,3 +68,12 @@ brakeman-*.*
 **/.next
 .data
 *.tsbuildinfo
+
+# Sekrety. `.env.example` (bez wartości) jest commitowany celowo, `.env*` z wartościami nigdy —
+# tryb „własne repo" trzyma tu token GitHuba z prawem zapisu do repo sklepu.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
