@@ -12,9 +12,9 @@
   domyślnego motywu — świadomie odłożone (patrz `MACIERZ_ZGODNOSCI.md`).
 - ✅ Etap 5: `packages/renderer` — `registerSection`/`registerBlock`,
   `renderPage`/`renderSection`/`renderBlock`, `sectionStyles`/`blockStyles`, `SectionErrorBoundary`
-  (15 testów ✓, Vitest + React Testing Library + jsdom). Testowane na atrapach komponentów —
-  `packages/component-library` (prawdziwe sekcje: Hero, Header, ProductGrid, itd.) to osobny,
-  nierozpoczęty pakiet.
+  (15 testów ✓, Vitest + React Testing Library + jsdom). Sam renderer testowany na atrapach
+  (celowo — nie zna konkretnych komponentów); realne sekcje mieszkają w `packages/component-library`
+  (zaczęty później, 7 z 14 sekcji treści).
 - ✅ `packages/editor-core` (bez numeru etapu tutaj, ale twardy prerequisite Etapu 6 — patrz
   `ARCHITEKTURA.md`) — `Command`, `CommandStack` (execute/undo/redo), `MoveSectionCommand`,
   `MoveBlockCommand`, `UpdateSectionCommand`, `UpdateBlockCommand` (24 testy ✓). Poza zakresem:
@@ -36,8 +36,30 @@
   `FilePageRepository` → `renderPage(live)` → storefront, tymi samymi komponentami co canvas
   edytora. Sekcja commerce z własną, async-RSC implementacją hosta. Znaleziska (w tym naprawiony
   blocker: `'use client'` na `SectionErrorBoundary`): `ARCHITEKTURA.md` → „Wynik integration spike'a".
-- ⏳ Etapy 9–12: Do zrobienia. **Kolejna decyzja należy do właściciela:** managed vs „własne repo"
-  jako ścieżka pierwsza (`ARCHITEKTURA.md` → „Plan dalszy" pkt 3).
+- ✅ **Decyzja właściciela (2026-07-16): tryb „własne repo" (opcja A)** — dokumenty stron żyją jako
+  JSON w repo sklepu, publikacja = commit + redeploy. Zgodne z `store-factory.md`
+  (`independent_storefront` = model domyślny) i z jego Definition of Done (oddanie repo = oddanie
+  treści). **Backend commerce `sklepik` jest w tym niezależnie od wszystkiego — zawsze.**
+- ✅ Zapis z edytora — przycisk „Zapisz" → Server Action → `PageRepository`. Round-trip
+  edycja→zapis→storefront zweryfikowany w przeglądarce.
+- ✅ `GitHubPageRepository` — publikacja jako commit do repo sklepu; `sha` chroni przed cichym
+  nadpisaniem równoległej edycji. Przełączenie lokalne↔produkcja to **wyłącznie env**
+  (`apps/editor/.env.example`), zero zmian w kodzie edytora.
+  ⚠️ **Nieuruchomiony przeciw prawdziwemu GitHubowi** — patrz „Co pozostaje" niżej.
+- ⏳ Etapy 9–12: Do zrobienia (draft/publish w UI, media, motywy, pełna zgodność).
+
+## Co pozostaje po stronie właściciela (żeby ruszyć produkcyjnie)
+
+1. **Repo sklepu** (dziś: `sklepikFront` albo nowe repo z template — patrz `store-factory.md` Etap 2).
+2. **Fine-grained token GitHub** z uprawnieniem `Contents: read+write` **tylko na to jedno repo**.
+3. Ustawić `GITHUB_CONTENT_*` w env edytora (wzór: `apps/editor/.env.example`) i **uruchomić po raz
+   pierwszy** — to jedyny sposób, żeby zweryfikować `GitHubPageRepository` przeciw prawdziwemu API.
+   Spodziewane miejsca tarcia: uprawnienia tokena, nazwa gałęzi, ścieżka `content/`.
+4. Storefront sklepu musi renderować dokument (Front C) — `apps/storefront-demo` jest działającym
+   wzorcem do przeniesienia.
+
+⚠️ Nie robiłem commitów do żadnego prawdziwego repo sklepu — to zmiana wychodząca na zewnątrz,
+wymaga Twojej zgody i konfiguracji.
 - ❌ Spree Rails usunięty — to jest czysty TypeScript edytor
 - 📌 Decyzja 2026-07-16: docelowo edytor trafia do **każdego** nowego sklepu w Store Factory, w
   obu trybach (`managed` i „własne repo"), jako jeden pakiet — patrz `ARCHITEKTURA.md` § „Dystrybucja"
@@ -99,8 +121,11 @@ planowanego `better-sqlite3` (brak toolchainu do kompilacji natywnej, zob. `ARCH
 - `renderSection(section, { mode })` + symetryczny `renderBlock(block, { mode })` ✅
 - Style helpers: `sectionStyles()`, `blockStyles()` ✅
 - `SectionErrorBoundary` — nieznany typ / rzucający komponent nie crashuje reszty strony ✅
-- Testowane na atrapach; prawdziwe komponenty czekają na `packages/component-library` (osobny,
-  nierozpoczęty pakiet — nie jest częścią żadnego ponumerowanego etapu w tym dokumencie)
+- Renderer testowany na atrapach — celowo, bo nie zna konkretnych komponentów. Realne sekcje są
+  w `packages/component-library` (7 z 14 treści; nie jest częścią żadnego ponumerowanego etapu —
+  powstał, gdy spike wymusił współdzielenie komponentów między edytorem a storefrontem)
+- `SectionErrorBoundary` dostał później `'use client'`, żeby renderer dał się w ogóle zaimportować
+  do Server Component storefrontu (znalezisko spike'a — `ARCHITEKTURA.md`)
 
 ### Etap 6: Canvas i drag&drop ✅
 **Pakiety:** `packages/editor-core` (prerequisite, brak własnego numeru etapu) + `apps/editor`
@@ -178,6 +203,17 @@ planowanego `better-sqlite3` (brak toolchainu do kompilacji natywnej, zob. `ARCH
 ---
 
 ## Integracja z `pawelekbyra/sklepik`
+
+> ⚠️ **Ta sekcja (§1–4) jest historyczna i częściowo nieaktualna.** Powstała przy założeniu, że
+> integracja = „podmień `PageRepository` na klienta API `sklepik`". Weryfikacja stanu
+> `sklepik`/`sklepikFront` (2026-07-16) pokazała, że to tylko jeden z **trzech frontów** — a decyzja
+> właściciela o trybie „własne repo" oznacza, że opisany niżej `SklepikPageRepository` i endpointy
+> w `sklepik` (§3) **nie są ścieżką docelową**; dokumenty stron idą do repo sklepu przez
+> `GitHubPageRepository`. Aktualny obraz: [`ARCHITEKTURA.md`](ARCHITEKTURA.md) →
+> „Integracja z ekosystemem sklepik" i „Kto jest źródłem prawdy".
+>
+> Zostawione, bo pozostaje przydatne, **gdyby** kiedyś powstał tryb `managed` (który wg
+> `store-factory.md` jest otwartym pytaniem) — wtedy §3 jest dobrym szkicem kontraktu API.
 
 ### 1. Interfejs kompatybilny
 

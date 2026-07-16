@@ -14,6 +14,9 @@ Legenda: `planowane` · `zaimplementowane` · `przetestowane`.
 | STI (pole `type` jako dyskryminator) | Zod discriminated union | przetestowane | `packages/schema/test/{section,block,page}.test.ts` |
 | Rejestr rozszerzalności typów | `packages/renderer` component registry (`registerSection`/`registerBlock`) | przetestowane | `packages/renderer/test/registry.test.tsx` |
 | Custom code / dystrybucja managed vs własne repo | Decyzja 2026-07-16: w trybie „własne repo" właściciel woła `registerSection()` bez sandboxa (pełny dostęp do repo); w trybie `managed` woła tylko platforma. Zob. `ARCHITEKTURA.md` § „Dystrybucja". | zdecydowane (projekt), implementacja planowana | |
+| Gdzie żyją dokumenty stron | **Decyzja właściciela 2026-07-16: „własne repo"** — JSON w repo sklepu, publikacja = commit + redeploy. `GitHubPageRepository` (prod) / `FilePageRepository` (lokalnie). Backend commerce (`sklepik`) jest niezależnie od tego zawsze. Zob. `ARCHITEKTURA.md` § „Kto jest źródłem prawdy". | przetestowane jednostkowo (mock GitHub API); **nigdy nie uruchomione przeciw prawdziwemu GitHubowi** | `packages/persistence/test/github-page-repository.test.ts` |
+| Zapis zmian z edytora | Przycisk „💾 Zapisz" → Server Action `savePage` (rewalidacja `PageSchema` na granicy sieci) → `PageRepository` | przetestowane (zweryfikowane w przeglądarce: edycja → zapis → plik na dysku → storefront pokazuje zmianę) | |
+| Konflikt równoległej edycji | `GitHubPageRepository` wysyła `sha` bieżącego bloba — GitHub odrzuca nieaktualny zapis zamiast cicho nadpisać cudzy commit; błąd jest podnoszony, nie ponawiany | przetestowane | `github-page-repository.test.ts` |
 | Preferencje jako płaskie skalary | pola w schema per typ, z `.default()` | przetestowane | `packages/schema/test/section.test.ts` |
 | Rich text (ActionText) | pole `html: string` w schema | planowane | |
 | Assety (obraz sekcji, screenshot) | `MediaRepository` (SQLite demo) zwraca `{id, url}`; schema trzyma `assetId` | przetestowane | `packages/persistence/test/media-repository.test.ts` |
@@ -118,8 +121,9 @@ dotyczy `packages/component-library`. Sekcje **commerce** świadomie nie mają k
   częścią specyfikacji Etapu 4 w `INSTRUKCJA_INTEGRACJI.md`.
 - **Etap 5**: Renderer komponentów ✅ — `registerSection`/`registerBlock`,
   `renderPage`/`renderSection`/`renderBlock`, `sectionStyles`/`blockStyles`, `SectionErrorBoundary`
-  (15 testów, Vitest + React Testing Library + jsdom). `component-library` (prawdziwe komponenty
-  sekcji) to osobny pakiet, nierozpoczęty — na razie renderer testowany na atrapach.
+  (15 testów, Vitest + React Testing Library + jsdom). Renderer testowany na atrapach — celowo, bo
+  z założenia nie zna konkretnych komponentów; realne sekcje żyją w `packages/component-library`,
+  który powstał później (patrz niżej).
 - **`packages/editor-core`** (bez numeru etapu w `INSTRUKCJA_INTEGRACJI.md`, ale twardy prerequisite
   Etapu 6 — `ARCHITEKTURA.md` przypisuje mu `CommandStack`/`MoveSectionCommand`) ✅ — `Command`
   interfejs, `CommandStack` (execute/undo/redo), `MoveSectionCommand`, `MoveBlockCommand`,
@@ -154,7 +158,18 @@ dotyczy `packages/component-library`. Sekcje **commerce** świadomie nie mają k
 - **Integration spike** (`apps/storefront-demo`) ✅ — round-trip dokument JSON → `FilePageRepository`
   → `renderPage(live)` → storefront, tymi samymi komponentami co canvas. Znaleziska (w tym blocker
   `'use client'` na error boundary): patrz `ARCHITEKTURA.md` → „Wynik integration spike'a".
-- **Etap 9**: Draft/publish i historia
+- **Zapis + tryb „własne repo"** (bez numeru etapu; wynik decyzji właściciela o opcji A) ✅ —
+  edytor ładuje i zapisuje dokument przez `PageRepository` (przycisk Zapisz → Server Action).
+  Round-trip edycja→zapis→storefront zweryfikowany w przeglądarce. `GitHubPageRepository`
+  (publikacja = commit do repo sklepu) zaimplementowany i przetestowany na mocku; przełączenie
+  lokalne↔produkcja to wyłącznie env (`apps/editor/.env.example`).
+  ⚠️ **Nigdy nie uruchomiony przeciw prawdziwemu GitHubowi** — wymaga tokena i repo sklepu
+  (konfiguracja właściciela). Do czasu pierwszego realnego uruchomienia traktować jak
+  niezweryfikowane, analogicznie do provisioningu w `store-factory.md`.
+- **Etap 9**: Draft/publish i historia — `VersionRepository` (draft/publish/historia) jest gotowy
+  i przetestowany od Etapu 4; brakuje **wyłącznie spięcia z UI**. Uwaga: w trybie „własne repo"
+  historię wersji daje też sam git, więc zakres tego etapu warto przemyśleć, a nie kopiować
+  z modelu railsowego.
 - **Etap 10**: Media
 - **Etap 11**: Motywy
 - **Etap 12**: Pełna zgodność funkcjonalna

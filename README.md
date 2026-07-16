@@ -8,7 +8,7 @@ Niezależny wizualny edytor stron i motywów dla ekosystemu `sklepik`, rozwijany
 > funkcjonalnego (patrz [`docs/EDITOR_ARCHITECTURE.md`](docs/EDITOR_ARCHITECTURE.md) — audyt
 > oryginalnego page buildera), ale dalszy rozwój odbywa się wyłącznie w TypeScript.
 
-## Stan projektu (etapy 1–7 z 12 zrobione)
+## Stan projektu (etapy 1–8 z 12 + tryb „własne repo")
 
 Szczegółowy, wiersz-po-wierszu status każdej funkcji: [`docs/MACIERZ_ZGODNOSCI.md`](docs/MACIERZ_ZGODNOSCI.md).
 Plan integracji z `pawelekbyra/sklepik`: [`docs/INSTRUKCJA_INTEGRACJI.md`](docs/INSTRUKCJA_INTEGRACJI.md).
@@ -20,26 +20,36 @@ Plan integracji z `pawelekbyra/sklepik`: [`docs/INSTRUKCJA_INTEGRACJI.md`](docs/
   `MediaRepository`, `DemoCommerceProvider` na `node:sqlite`, z izolacją `storeId`
 - `packages/renderer` — rejestr komponentów, `renderPage`/`renderSection`/`renderBlock`,
   `sectionStyles`/`blockStyles`, `SectionErrorBoundary`
-- `packages/editor-core` — `Command`/`CommandStack` (undo/redo), `Move`/`UpdateSectionCommand`,
-  `Move`/`UpdateBlockCommand`
-- `apps/editor` — canvas z drag&drop (`@dnd-kit`) i panel właściwości generowany ze schematów Zod,
-  zweryfikowane w przeglądarce
+- `packages/editor-core` — `Command`/`CommandStack` (undo/redo), `Move`/`Update`/`Add`/`Delete`
+  SectionCommand, `Move`/`UpdateBlockCommand`
+- `packages/component-library` — 7 z 14 sekcji treści + `registerContentSections()`; te same
+  komponenty rejestruje edytor i storefront
+- `apps/editor` — canvas z drag&drop (`@dnd-kit`), dodawanie/usuwanie sekcji, panel właściwości
+  generowany ze schematów Zod, tryb Podgląd (`live`), **zapis dokumentu**
+- `apps/storefront-demo` — storefront trybu „własne repo": renderuje dokument JSON ze swojego repo
+  przez ten sam renderer. Round-trip edycja→zapis→storefront zweryfikowany w przeglądarce.
 
 ### Jeszcze niegotowe
 
-- `packages/component-library` — prawdziwe komponenty sekcji (Hero, Header, ProductGrid, itd.);
-  `apps/editor` na razie renderuje placeholdery
-- live preview w trybie `live` osobnym od `edit` (Etap 8)
-- draft/publish i historia wersji w UI (Etap 9) — `VersionRepository` już to obsługuje, brak spięcia z UI
+- reszta `component-library` (Header, Footer, Testimonials, Video, Columns, Image, Navigation)
+- draft/publish i historia w UI (Etap 9) — `VersionRepository` gotowy, brak spięcia z UI
 - biblioteka mediów w UI (Etap 10) — `MediaRepository` gotowe
 - zarządzanie motywami w UI (Etap 11)
-- produkcyjna integracja z `pawelekbyra/sklepik` i `sklepikFront` — patrz „Decyzja o dystrybucji" niżej
+- pola-tablice w panelu właściwości (`faq.items`, `testimonials.items`)
+- **pierwsze realne uruchomienie `GitHubPageRepository`** przeciw prawdziwemu repo sklepu
 
-## Decyzja o dystrybucji
+## Decyzja o dystrybucji i o tym, gdzie żyje treść
 
-Docelowo każdy nowy sklep tworzony w Store Factory (`sklepik`) ma mieć ten edytor, w obu trybach
-niezależności: `managed` (współdzielony runtime) i „własne repo" (pełna niezależność kodu, bez
-sandboxa na custom code). Szczegóły: [`docs/ARCHITEKTURA.md`](docs/ARCHITEKTURA.md) § „Dystrybucja".
+Każdy nowy sklep ze Store Factory ma docelowo mieć ten edytor. **Decyzja właściciela (2026-07-16):
+tryb „własne repo"** — dokumenty stron to JSON w repo sklepu, publikacja = commit + redeploy
+(`GitHubPageRepository`). Oddanie repo klientowi oddaje więc również jego treść, zgodnie z
+Definition of Done Store Factory.
+
+Uwaga na częste nieporozumienie: **backend commerce (`sklepik`) jest zawsze** — trzyma produkty,
+ceny, koszyk i zamówienia w każdym trybie. Powyższa decyzja dotyczy wyłącznie *dokumentów stron*.
+
+Szczegóły: [`docs/ARCHITEKTURA.md`](docs/ARCHITEKTURA.md) → „Dystrybucja", „Kto jest źródłem prawdy",
+„Integracja z ekosystemem sklepik".
 
 ## Rozwój lokalny
 
