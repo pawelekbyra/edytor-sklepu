@@ -12,7 +12,7 @@ export default async function Home() {
       <h1 style={{ textAlign: 'center' }}>Edytor stron — demo</h1>
       <p style={{ textAlign: 'center', color: '#888' }}>
         Dodawaj i usuwaj sekcje, przeciągaj je, edytuj właściwości, przełącz na podgląd. Sekcje
-        treści pochodzą z <code>@editor/component-library</code> — tych samych komponentów używa
+        treści pochodzą z <code>@pawelekbyra/component-library</code> — tych samych komponentów używa
         storefront, dlatego podgląd odpowiada opublikowanej stronie.
       </p>
       <Canvas initialPage={page} />

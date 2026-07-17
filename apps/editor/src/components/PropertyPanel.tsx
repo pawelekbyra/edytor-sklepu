@@ -1,6 +1,6 @@
 'use client';
 
-import type { Section } from '@editor/schema';
+import type { Section } from '@pawelekbyra/schema';
 import { fieldsFromPreferencesSchema } from '../lib/fieldsFromSchema';
 import { SECTION_PREFERENCES_SCHEMA } from '../lib/sectionSchemas';
 

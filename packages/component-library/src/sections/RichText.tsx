@@ -1,6 +1,6 @@
-import { sectionStyles } from '@editor/renderer';
-import type { RenderMode, } from '@editor/renderer';
-import type { Section } from '@editor/schema';
+import { sectionStyles } from '@pawelekbyra/renderer';
+import type { RenderMode, } from '@pawelekbyra/renderer';
+import type { Section } from '@pawelekbyra/schema';
 
 // `html` comes from the editor's rich-text field. It is author-controlled content, rendered as
 // HTML by design — the same trust model as the Rails page builder's ActionText body. Sanitization

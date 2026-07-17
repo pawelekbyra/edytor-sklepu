@@ -1,6 +1,6 @@
 import { join } from 'node:path';
-import { FilePageRepository, GitHubPageRepository, type PageRepository } from '@editor/persistence';
-import type { Page } from '@editor/schema';
+import { FilePageRepository, GitHubPageRepository, type PageRepository } from '@pawelekbyra/persistence';
+import type { Page } from '@pawelekbyra/schema';
 
 // Server-only module. The editor edits the shop's page documents where they actually live in
 // "własne repo" mode (docs/ARCHITEKTURA.md): as JSON inside the shop's storefront repo.

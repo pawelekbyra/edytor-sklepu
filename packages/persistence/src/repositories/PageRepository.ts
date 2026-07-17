@@ -1,4 +1,4 @@
-import type { Page } from '@editor/schema';
+import type { Page } from '@pawelekbyra/schema';
 
 // The only implementation that changes when integrating with `sklepik`: swap SQLitePageRepository
 // for an API-client implementation of this same interface (see docs/INSTRUKCJA_INTEGRACJI.md).

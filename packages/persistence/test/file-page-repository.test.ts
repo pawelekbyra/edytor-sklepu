@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { PageSchema } from '@editor/schema';
+import { PageSchema } from '@pawelekbyra/schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { NotFoundError } from '../src/errors.js';
 import { FilePageRepository } from '../src/file/FilePageRepository.js';

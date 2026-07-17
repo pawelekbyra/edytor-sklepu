@@ -1,4 +1,4 @@
-import { PageSchema } from '@editor/schema';
+import { PageSchema } from '@pawelekbyra/schema';
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { registerSection, resetRegistry } from '../src/registry.js';

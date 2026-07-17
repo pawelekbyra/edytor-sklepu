@@ -88,10 +88,11 @@ zachowana, ale **kolejność niżej jest ważniejsza niż tamte numery**.
 
 1. **Autoryzacja `/admin` + SSO z panelu** — blokuje wszystko inne, bo bez tego nic nie wyjdzie
    poza localhost.
-2. **Przepakowanie `apps/editor` → `@sklepik/page-builder`** — edytor musi być wersjonowanym
-   pakietem montowanym jako `/admin` w starterze sklepu. To głównie przepakowanie, nie
-   przepisywanie: logika już siedzi w pakietach (`editor-core`, `renderer`, `component-library`,
-   `persistence`).
+2. ~~Przepakowanie `apps/editor` → `@sklepik/page-builder`~~ **ZROBIONE, ale inaczej niż tu opisano
+   (2026-07-17):** pakiety publikowalne noszą `@pawelekbyra/*` (GitHub Packages wymaga zgodności
+   scope'u z prawdziwym właścicielem repo — `pawelekbyra`, nie organizacja `sklepik`). Infrastruktura
+   publikacji (Changesets, `.github/workflows/release.yml`) gotowa; `apps/editor` jako całość wciąż
+   nie jest przepakowany do montażu jako `/admin` w `sklepikFront` — to zostaje.
 3. **Pierwsze realne uruchomienie `GitHubPageRepository`** — kod i testy (na mocku) są, ale **nigdy
    nie dotknął prawdziwego GitHuba**. Wymaga tokena i repo sklepu = konfiguracja właściciela.
    Spodziewane tarcia: uprawnienia fine-grained tokena, nazwa gałęzi, ścieżka `content/`.

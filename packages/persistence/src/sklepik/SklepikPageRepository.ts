@@ -1,4 +1,4 @@
-import { type Page, PageSchema } from '@editor/schema';
+import { type Page, PageSchema } from '@pawelekbyra/schema';
 import { NotFoundError } from '../errors.js';
 import type { PageRepository } from '../repositories/PageRepository.js';
 

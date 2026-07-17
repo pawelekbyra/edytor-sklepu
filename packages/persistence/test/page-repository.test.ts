@@ -1,4 +1,4 @@
-import { PageSchema } from '@editor/schema';
+import { PageSchema } from '@pawelekbyra/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { NotFoundError } from '../src/errors.js';
 import { createDatabase } from '../src/sqlite/db.js';

@@ -1,4 +1,4 @@
-import { type Page, PageSchema } from '@editor/schema';
+import { type Page, PageSchema } from '@pawelekbyra/schema';
 import type { Command } from '../Command.js';
 
 // Merges a partial preferences patch into a section's preferences — the primitive behind the

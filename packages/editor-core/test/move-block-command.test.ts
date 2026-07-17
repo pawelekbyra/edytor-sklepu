@@ -1,4 +1,4 @@
-import { PageSchema } from '@editor/schema';
+import { PageSchema } from '@pawelekbyra/schema';
 import { describe, expect, it } from 'vitest';
 import { CommandStack } from '../src/CommandStack.js';
 import { MoveBlockCommand } from '../src/commands/MoveBlockCommand.js';

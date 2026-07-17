@@ -1,4 +1,4 @@
-import { type Page, PageSchema } from '@editor/schema';
+import { type Page, PageSchema } from '@pawelekbyra/schema';
 import type { Command } from '../Command.js';
 
 // Same merge-patch primitive as UpdateSectionCommand, one level down for a block nested inside a

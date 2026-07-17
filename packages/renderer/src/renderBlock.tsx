@@ -1,5 +1,5 @@
 import { createElement, type ReactElement } from 'react';
-import type { Block } from '@editor/schema';
+import type { Block } from '@pawelekbyra/schema';
 import { getBlockComponent } from './registry.js';
 import type { RenderMode } from './types.js';
 

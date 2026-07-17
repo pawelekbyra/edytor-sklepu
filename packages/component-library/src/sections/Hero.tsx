@@ -1,6 +1,6 @@
-import { sectionStyles } from '@editor/renderer';
-import type { Section } from '@editor/schema';
-import type { RenderMode } from '@editor/renderer';
+import { sectionStyles } from '@pawelekbyra/renderer';
+import type { Section } from '@pawelekbyra/schema';
+import type { RenderMode } from '@pawelekbyra/renderer';
 
 export function Hero({ section }: { section: Section; mode: RenderMode }) {
   if (section.type !== 'hero') return null;

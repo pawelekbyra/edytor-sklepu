@@ -1,4 +1,4 @@
-import { SectionSchema } from '@editor/schema';
+import { SectionSchema } from '@pawelekbyra/schema';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ButtonSection } from '../src/sections/ButtonSection.js';

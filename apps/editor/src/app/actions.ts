@@ -1,6 +1,6 @@
 'use server';
 
-import { type Page, PageSchema } from '@editor/schema';
+import { type Page, PageSchema } from '@pawelekbyra/schema';
 import { pages } from '../lib/pages';
 
 // Writing the document is a server concern (the browser can't touch the shop's repo), so the

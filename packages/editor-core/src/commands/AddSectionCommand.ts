@@ -1,4 +1,4 @@
-import { type Page, PageSchema, type Section } from '@editor/schema';
+import { type Page, PageSchema, type Section } from '@pawelekbyra/schema';
 import type { Command } from '../Command.js';
 
 // Inserts an already-validated section at a given index and renumbers positions contiguously.

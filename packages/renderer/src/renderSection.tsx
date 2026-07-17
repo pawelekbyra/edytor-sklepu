@@ -1,5 +1,5 @@
 import { createElement, type ReactElement } from 'react';
-import type { Section } from '@editor/schema';
+import type { Section } from '@pawelekbyra/schema';
 import { SectionErrorBoundary } from './ErrorBoundary.js';
 import { getSectionComponent } from './registry.js';
 import type { RenderMode } from './types.js';

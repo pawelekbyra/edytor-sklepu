@@ -1,10 +1,10 @@
 'use client';
 
-import { type Command, CommandStack } from '@editor/editor-core';
-import type { Page } from '@editor/schema';
+import { type Command, CommandStack } from '@pawelekbyra/editor-core';
+import type { Page } from '@pawelekbyra/schema';
 import { useRef, useState } from 'react';
 
-// Thin React wrapper around the (deliberately React-free) CommandStack from `@editor/editor-core`
+// Thin React wrapper around the (deliberately React-free) CommandStack from `@pawelekbyra/editor-core`
 // — see ARCHITEKTURA.md "apps/editor: Stan edytora: editor-core CommandStack opakowany hookiem
 // useEditorStore". CommandStack itself doesn't trigger re-renders, so every mutation also updates
 // local state to notify React.

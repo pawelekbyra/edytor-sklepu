@@ -152,11 +152,24 @@ type PageVersion = {
 };
 ```
 
-## Dystrybucja: jeden pakiet, dwa tryby (`managed` / własne repo)
+## Dystrybucja: jeden pakiet, dwa tryby (`managed` / własne repo) — ramowanie historyczne
 
-**Decyzja (2026-07-16):** edytor + renderer są dystrybuowane jako jeden wersjonowany pakiet npm
-(docelowa nazwa: `@editor/*` → `@sklepik/page-builder` po integracji), zamiast osobnej aplikacji
-per tryb. Canvas, panel właściwości, `CommandStack` (undo/redo) i standardowa biblioteka sekcji z
+**Ramowanie "dwa tryby" jest nieaktualne od 2026-07-17** — model docelowy to jeden współdzielony
+storefront, nie wybór między `managed` a "własne repo" (patrz nota wyżej i
+`sklepik/docs/plans/storefront-composition-system.md`). Poniższy opis zostaje jako materiał
+historyczny; aktualna jest tylko decyzja o dystrybucji jako wersjonowany pakiet npm.
+
+**Nazwa pakietów (zweryfikowane 2026-07-17):** nie `@sklepik/*` jak wcześniej planowano —
+GitHub Packages wymaga, żeby scope odpowiadał prawdziwemu właścicielowi repo na GitHubie
+(`pawelekbyra`, konto osobiste, nie organizacja `sklepik`). Pakiety noszą dziś **`@pawelekbyra/*`**
+i mają realną infrastrukturę publikacji: `publishConfig` w każdym `package.json` (rejestr
+`npm.pkg.github.com`), Changesets (`.changeset/`) i workflow `.github/workflows/release.yml`.
+Nic się jeszcze nie opublikowało — publikacja wymaga dwóch świadomych kroków (changeset → merge
+PR wersjonującego), nie dzieje się automatycznie przy zwykłym pushu.
+
+**Decyzja (2026-07-16, częściowo nieaktualna — patrz wyżej):** edytor + renderer są dystrybuowane
+jako jeden wersjonowany pakiet npm, zamiast osobnej aplikacji per tryb. Canvas, panel właściwości,
+`CommandStack` (undo/redo) i standardowa biblioteka sekcji z
 `packages/component-library` są **identyczne** w obu trybach Store Factory. Jedyna różnica to które
 repo woła `registerSection()`/`registerBlock()` i jaka implementacja `PageRepository`/`storeId`
 stoi pod spodem:
@@ -254,8 +267,8 @@ wersjonowany pakiet i o współdzielonym runtime dla sekcji customowych **pozost
 
 **Nota o zmianie (2026-07-17):** właściciel odrzucił model "osobne repo/deployment per sklep"
 (decyzja w `pawelekbyra/sklepik/docs/plans/storefront-composition-system.md`, kanon). Edytor nadal
-jest dystrybuowany jako wersjonowany pakiet (`@sklepik/page-builder`, docelowa nazwa — dziś `@editor/*`)
-i montowany jako trasa `/admin` — ale w **jednej, współdzielonej aplikacji `sklepikFront` obsługującej
+jest dystrybuowany jako wersjonowany pakiet (`@pawelekbyra/*` — zweryfikowana, ostateczna nazwa,
+patrz sekcja „Dystrybucja" wyżej) i montowany jako trasa `/admin` — ale w **jednej, współdzielonej aplikacji `sklepikFront` obsługującej
 wiele sklepów** (routing po domenie/`store_id`), nie w osobnym repo każdego sklepu. Argument
 rozstrzygający z sekcji niżej (centralny edytor nie ma czym wyrenderować sekcji customowych sklepu,
 bo rejestr jest per-runtime) **nadal obowiązuje i nadal uzasadnia współdzielony runtime** — różnica

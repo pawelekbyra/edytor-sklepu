@@ -1,4 +1,4 @@
-import { ThemeSchema } from '@editor/schema';
+import { ThemeSchema } from '@pawelekbyra/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { NotFoundError } from '../src/errors.js';
 import { createDatabase } from '../src/sqlite/db.js';

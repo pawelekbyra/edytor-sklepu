@@ -1,5 +1,5 @@
 import type { DatabaseSync } from 'node:sqlite';
-import { type Theme, ThemeSchema } from '@editor/schema';
+import { type Theme, ThemeSchema } from '@pawelekbyra/schema';
 import { NotFoundError } from '../errors.js';
 import type { ThemeRepository } from '../repositories/ThemeRepository.js';
 import { withTransaction } from './db.js';

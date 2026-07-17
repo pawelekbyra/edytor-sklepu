@@ -1,5 +1,5 @@
-import type { RenderMode } from '@editor/renderer';
-import type { Section } from '@editor/schema';
+import type { RenderMode } from '@pawelekbyra/renderer';
+import type { Section } from '@pawelekbyra/schema';
 
 export function Spacer({ section, mode }: { section: Section; mode: RenderMode }) {
   if (section.type !== 'spacer') return null;

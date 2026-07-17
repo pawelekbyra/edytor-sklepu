@@ -1,4 +1,4 @@
-import { PageSchema, SectionSchema } from '@editor/schema';
+import { PageSchema, SectionSchema } from '@pawelekbyra/schema';
 import { describe, expect, it } from 'vitest';
 import { CommandStack } from '../src/CommandStack.js';
 import { AddSectionCommand } from '../src/commands/AddSectionCommand.js';

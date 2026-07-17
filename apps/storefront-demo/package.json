@@ -1,8 +1,8 @@
 {
-  "name": "@editor/storefront-demo",
+  "name": "@pawelekbyra/storefront-demo",
   "version": "0.0.1",
   "private": true,
-  "description": "Integration spike: a standalone storefront that renders a page document from its own repo (JSON) through @editor/renderer + @editor/component-library — the \"własne repo\" mode from ARCHITEKTURA.md.",
+  "description": "Integration spike: a standalone storefront that renders a page document from its own repo (JSON) through @pawelekbyra/renderer + @pawelekbyra/component-library — the \"własne repo\" mode from ARCHITEKTURA.md.",
   "type": "module",
   "scripts": {
     "dev": "next dev --port 3200",
@@ -10,10 +10,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@editor/component-library": "workspace:*",
-    "@editor/persistence": "workspace:*",
-    "@editor/renderer": "workspace:*",
-    "@editor/schema": "workspace:*",
+    "@pawelekbyra/component-library": "workspace:*",
+    "@pawelekbyra/persistence": "workspace:*",
+    "@pawelekbyra/renderer": "workspace:*",
+    "@pawelekbyra/schema": "workspace:*",
     "next": "^15.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

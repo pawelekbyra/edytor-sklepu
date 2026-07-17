@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { Block, Section } from '@editor/schema';
+import type { Block, Section } from '@pawelekbyra/schema';
 
 // Flat scalar "preferences" -> CSS is exactly the piece the official Rails page_builder does
 // server-side (preference -> inline style helper); kept here as pure functions so both the editor

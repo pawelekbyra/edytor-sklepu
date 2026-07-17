@@ -1,7 +1,7 @@
 'use client';
 
-import { registerContentSections } from '@editor/component-library';
-import { registerSection } from '@editor/renderer';
+import { registerContentSections } from '@pawelekbyra/component-library';
+import { registerSection } from '@pawelekbyra/renderer';
 
 // Content sections come from the shared library — the same components the storefront registers,
 // which is what makes the editor's preview match the published page.

@@ -1,4 +1,4 @@
-import type { Theme } from '@editor/schema';
+import type { Theme } from '@pawelekbyra/schema';
 
 export interface ThemeRepository {
   create(storeId: string, theme: Theme): Promise<Theme>;

@@ -42,7 +42,7 @@ pnpm workspace (bez Turborepo — świadoma decyzja, patrz `ARCHITEKTURA.md`).
 | `apps/editor` | Next.js — canvas edytora, panel właściwości generowany z Zod |
 | `apps/storefront-demo` | Dowód round-tripu (JSON → renderer → strona) — demo w izolacji, docelowo zastępowane integracją z prawdziwym `sklepikFront` |
 
-Nazwy pakietów dziś: `@editor/*`. Docelowo (po integracji): `@sklepik/*`, publikowane jako wersjonowane paczki konsumowane przez `sklepikFront` — nie fizyczny merge repozytoriów (uzasadnienie w `storefront-composition-system.md`: wersjonowane paczki pozwalają aktualizować silnik bez ręcznego patchowania).
+Nazwy pakietów: **`@pawelekbyra/*`** (zweryfikowane 2026-07-17 — `@sklepik/*` nie działa jako scope GitHub Packages, bo repo należy do konta osobistego `pawelekbyra`, nie do organizacji `sklepik`). Publikowane jako wersjonowane paczki (GitHub Packages, `npm.pkg.github.com`), konsumowane przez `sklepikFront` — nie fizyczny merge repozytoriów (uzasadnienie w `storefront-composition-system.md`: wersjonowane paczki pozwalają aktualizować silnik bez ręcznego patchowania). Infrastruktura: `publishConfig` w każdym `package.json` biblioteki, Changesets (`.changeset/`), `.github/workflows/release.yml`. Publikacja wymaga dwóch świadomych kroków (changeset → merge PR wersjonującego) — nic się nie publikuje automatycznie przy zwykłym pushu.
 
 ## Ważne: co jest legacy
 

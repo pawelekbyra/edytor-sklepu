@@ -1,4 +1,4 @@
-import { type Page, PageSchema, type Section } from '@editor/schema';
+import { type Page, PageSchema, type Section } from '@pawelekbyra/schema';
 import type { Command } from '../Command.js';
 
 // Removes a section and renumbers positions; undo reinserts it at its original index

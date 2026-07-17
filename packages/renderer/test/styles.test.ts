@@ -1,4 +1,4 @@
-import { SectionSchema } from '@editor/schema';
+import { SectionSchema } from '@pawelekbyra/schema';
 import { describe, expect, it } from 'vitest';
 import { blockStyles, sectionStyles } from '../src/styles.js';
 

@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react';
-import type { Block, BlockType, Section, SectionType } from '@editor/schema';
+import type { Block, BlockType, Section, SectionType } from '@pawelekbyra/schema';
 import type { RenderMode } from './types.js';
 
 // Components receive the full discriminated-union `Section`/`Block` and narrow on `.type`

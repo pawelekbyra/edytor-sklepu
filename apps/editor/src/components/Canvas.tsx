@@ -8,9 +8,9 @@ import {
   DeleteSectionCommand,
   MoveSectionCommand,
   UpdateSectionCommand,
-} from '@editor/editor-core';
-import { renderPage, renderSection } from '@editor/renderer';
-import type { Page, Section, SectionType } from '@editor/schema';
+} from '@pawelekbyra/editor-core';
+import { renderPage, renderSection } from '@pawelekbyra/renderer';
+import type { Page, Section, SectionType } from '@pawelekbyra/schema';
 import { type CSSProperties, useEffect, useState, useTransition } from 'react';
 import { savePage } from '../app/actions';
 import { useEditorStore } from '../hooks/useEditorStore';

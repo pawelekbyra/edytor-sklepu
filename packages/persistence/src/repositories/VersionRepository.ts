@@ -1,4 +1,4 @@
-import type { Page, PageVersion } from '@editor/schema';
+import type { Page, PageVersion } from '@pawelekbyra/schema';
 
 // Replaces Rails' preview-record-duplication with explicit draft/published snapshots of a Page
 // (see packages/schema/src/page-version.ts).

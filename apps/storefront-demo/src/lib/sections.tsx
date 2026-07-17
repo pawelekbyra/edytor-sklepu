@@ -1,8 +1,8 @@
-import { registerContentSections } from '@editor/component-library';
-import { DemoCommerceProvider } from '@editor/persistence';
-import { registerSection, type SectionComponent } from '@editor/renderer';
-import type { Section } from '@editor/schema';
-import type { RenderMode } from '@editor/renderer';
+import { registerContentSections } from '@pawelekbyra/component-library';
+import { DemoCommerceProvider } from '@pawelekbyra/persistence';
+import { registerSection, type SectionComponent } from '@pawelekbyra/renderer';
+import type { Section } from '@pawelekbyra/schema';
+import type { RenderMode } from '@pawelekbyra/renderer';
 
 // Content sections: the exact same shared components the editor registers. This is what makes the
 // editor's preview and this published page render identically.

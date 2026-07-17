@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
-import { type Page, type PageVersion, PageVersionSchema } from '@editor/schema';
+import { type Page, type PageVersion, PageVersionSchema } from '@pawelekbyra/schema';
 import { NotFoundError } from '../errors.js';
 import type { VersionRepository } from '../repositories/VersionRepository.js';
 import { withTransaction } from './db.js';

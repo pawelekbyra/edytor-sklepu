@@ -1,4 +1,4 @@
-import { BlockSchema } from '@editor/schema';
+import { BlockSchema } from '@pawelekbyra/schema';
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { registerBlock, resetRegistry } from '../src/registry.js';

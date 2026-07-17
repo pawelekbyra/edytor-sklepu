@@ -1,4 +1,4 @@
-import { type Page, PageSchema } from '@editor/schema';
+import { type Page, PageSchema } from '@pawelekbyra/schema';
 import type { Command } from '../Command.js';
 
 // Reorders `page.sections` and reassigns `position` for every section so it stays contiguous —

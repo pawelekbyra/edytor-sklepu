@@ -1,5 +1,5 @@
 import { createElement, Fragment, type ReactElement } from 'react';
-import type { Page } from '@editor/schema';
+import type { Page } from '@pawelekbyra/schema';
 import { renderSection } from './renderSection.js';
 import type { RenderMode } from './types.js';
 

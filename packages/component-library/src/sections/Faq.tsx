@@ -1,6 +1,6 @@
-import { sectionStyles } from '@editor/renderer';
-import type { RenderMode } from '@editor/renderer';
-import type { Section } from '@editor/schema';
+import { sectionStyles } from '@pawelekbyra/renderer';
+import type { RenderMode } from '@pawelekbyra/renderer';
+import type { Section } from '@pawelekbyra/schema';
 
 export function Faq({ section }: { section: Section; mode: RenderMode }) {
   if (section.type !== 'faq') return null;

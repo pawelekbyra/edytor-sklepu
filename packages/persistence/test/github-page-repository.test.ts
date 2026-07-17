@@ -1,4 +1,4 @@
-import { PageSchema } from '@editor/schema';
+import { PageSchema } from '@pawelekbyra/schema';
 import { describe, expect, it, vi } from 'vitest';
 import { NotFoundError } from '../src/errors.js';
 import { GitHubPageRepository } from '../src/github/GitHubPageRepository.js';

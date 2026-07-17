@@ -1,4 +1,4 @@
-import { type Section, SectionSchema, type SectionType } from '@editor/schema';
+import { type Section, SectionSchema, type SectionType } from '@pawelekbyra/schema';
 
 // Sensible starter preferences per type — most sections validate with `{}` (schema defaults fill
 // in), but a few have required fields with no default (button, video) that must be seeded here.

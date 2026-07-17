@@ -1,4 +1,4 @@
-import { PageSchema, ThemeSchema } from '@editor/schema';
+import { PageSchema, ThemeSchema } from '@pawelekbyra/schema';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { NotFoundError } from '../src/errors.js';
 import type { DatabaseSync } from 'node:sqlite';

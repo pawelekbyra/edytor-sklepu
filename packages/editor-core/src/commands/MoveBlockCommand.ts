@@ -1,4 +1,4 @@
-import { type Page, PageSchema } from '@editor/schema';
+import { type Page, PageSchema } from '@pawelekbyra/schema';
 import type { Command } from '../Command.js';
 
 // Same reorder primitive as MoveSectionCommand, one level down: blocks nested inside a section

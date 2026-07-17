@@ -1,6 +1,6 @@
-import { sectionStyles } from '@editor/renderer';
-import type { RenderMode } from '@editor/renderer';
-import type { Section } from '@editor/schema';
+import { sectionStyles } from '@pawelekbyra/renderer';
+import type { RenderMode } from '@pawelekbyra/renderer';
+import type { Section } from '@pawelekbyra/schema';
 
 const ALIGNMENT_TO_ITEMS = { top: 'flex-start', middle: 'center', bottom: 'flex-end' } as const;
 

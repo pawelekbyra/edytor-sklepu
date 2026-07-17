@@ -1,0 +1,49 @@
+name: Release
+
+# Changesets' standard two-step flow — nothing publishes on a plain push:
+#   1. A push to main with pending changesets (.changeset/*.md, not config.json/README.md)
+#      opens/updates a "Version Packages" PR that bumps versions and updates changelogs.
+#   2. Only merging THAT PR runs this workflow again with no pending changesets left, which
+#      is when `changesets/action` actually runs `pnpm -r publish` for real.
+# So setting this up does not publish anything by itself — a changeset must be authored and
+# its version PR merged first, both deliberate, reviewable steps.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      packages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://npm.pkg.github.com
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r typecheck
+      - run: pnpm -r test
+      - run: pnpm -r build
+      - name: Create Release Pull Request or Publish
+        uses: changesets/action@v1
+        with:
+          publish: pnpm changeset publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN is scoped to this repo and has packages:write via the `permissions`
+          # block above — no separate PAT needed to publish to this repo's own GitHub Packages.
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

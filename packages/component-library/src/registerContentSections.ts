@@ -1,4 +1,4 @@
-import { registerSection } from '@editor/renderer';
+import { registerSection } from '@pawelekbyra/renderer';
 import { ButtonSection } from './sections/ButtonSection.js';
 import { Faq } from './sections/Faq.js';
 import { Hero } from './sections/Hero.js';
