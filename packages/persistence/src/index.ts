@@ -19,3 +19,8 @@ export { DemoCommerceProvider } from './sqlite/DemoCommerceProvider.js';
 export { FilePageRepository } from './file/FilePageRepository.js';
 export { GitHubPageRepository } from './github/GitHubPageRepository.js';
 export type { GitHubPageRepositoryOptions } from './github/GitHubPageRepository.js';
+
+// "Współdzielony storefront" mode (storefront-composition-system.md, kanon od 2026-07-17):
+// page documents live in the sklepik database, scoped by store_id.
+export { SklepikPageRepository } from './sklepik/SklepikPageRepository.js';
+export type { SklepikPageRepositoryOptions } from './sklepik/SklepikPageRepository.js';
