@@ -1,8 +1,17 @@
 # Roadmapa: co zostało, żeby to zintegrować i wdrożyć
 
+> **UWAGA (2026-07-17):** Punkty 1, 3, 4 w sekcji 2 niżej (Store Factory, dokumenty stron w repo
+> sklepu, edytor w repo każdego sklepu) opisują decyzję z 2026-07-16, którą **właściciel od tamtej
+> pory odrzucił**. Kanon aktualnej decyzji: `pawelekbyra/sklepik/docs/plans/storefront-composition-system.md`
+> (jeden współdzielony storefront, layout jako dane, `/admin` jako trasa tej samej aplikacji, nie
+> osobne repo per sklep). Reszta tego dokumentu (stan pakietów, blocker autoryzacji, punkty 2/5)
+> pozostaje trafna — czytaj z tą jedną poprawką w pamięci.
+>
 > **Dokument dla następnego agenta.** Spisany 2026-07-16 na koniec sesji, w której powstały etapy
 > 4–8, `component-library`, integration spike i tryb „własne repo". Celem jest, żebyś **nie
-> odkrywał drugi raz** tego, co już wiadomo, i **nie podważał decyzji**, które właściciel już podjął.
+> odkrywał drugi raz** tego, co już wiadomo, i **nie podważał decyzji**, które właściciel już podjął —
+> z zastrzeżeniem uwagi wyżej: decyzje właściciela mogą się zmieniać, zawsze sprawdzaj `sklepik`
+> jako kanon, jeśli coś tu wygląda na nieaktualne.
 >
 > Kolejność czytania: ten plik → [`ARCHITEKTURA.md`](ARCHITEKTURA.md) (decyzje + uzasadnienia) →
 > [`MACIERZ_ZGODNOSCI.md`](MACIERZ_ZGODNOSCI.md) (status funkcja po funkcji).
@@ -28,18 +37,29 @@ Trzy warstwy, trzy różne stany — nie myl ich:
 
 ## 2. Decyzje właściciela — NIE podważaj ich bez rozmowy
 
-Wszystkie z 2026-07-16, uzasadnienia w [`ARCHITEKTURA.md`](ARCHITEKTURA.md):
+Stan z 2026-07-16, **zaktualizowany 2026-07-17** (patrz uwaga na górze dokumentu i kanon w
+`sklepik/docs/plans/storefront-composition-system.md`):
 
-1. **Edytor trafia do każdego nowego sklepu** ze Store Factory.
-2. **Custom code bez sandboxa** w trybie „własne repo" (sandbox miałby sens tylko w `managed`).
-3. **Dokumenty stron żyją w repo sklepu** („własne repo", opcja A) — publikacja = commit + redeploy.
-   Backend commerce `sklepik` jest **zawsze**, niezależnie od tego; ta decyzja dotyczy wyłącznie
-   *dokumentów stron*. To nie jest to samo i łatwo pomylić.
-4. **Edytor mieszka jako trasa `/admin` w repo każdego sklepu**, z SSO z panelu `sklepik`.
-   Argument rozstrzygający: centralny edytor nie ma czym wyrenderować sekcji customowych sklepu
-   (rejestr jest per-runtime) — musiałby budować iframe + `postMessage` jak Shopify.
+1. ~~Edytor trafia do każdego nowego sklepu ze Store Factory.~~ **ODRZUCONE 2026-07-17.** Store
+   Factory (repo+Vercel per sklep) jest porzucone. Edytor trafia do jednej, współdzielonej aplikacji
+   wielosklepowej (`sklepikFront`), montowany jako `/admin`.
+2. **Custom code bez pełnego sandboxa server-side, ale nie "bez ograniczeń".** W nowym modelu
+   (jeden współdzielony runtime, nie osobne repo klienta) custom code klienta wykonuje się wyłącznie
+   client-side, w `<iframe sandbox="allow-scripts">` ze ścisłym CSP — bo teraz dzieli infrastrukturę
+   z innymi sklepami, nie ma własnego izolowanego deploymentu. Warunkowa logika (widoczność, reguły)
+   przez JSON-Logic, zero wykonania kodu. Pełne uzasadnienie: `storefront-composition-system.md`.
+3. ~~Dokumenty stron żyją w repo sklepu (opcja A, git-based CMS).~~ **ODRZUCONE 2026-07-17.**
+   Dokumenty stron żyją w bazie `sklepik`, scoped po `store_id` (nowa implementacja `PageRepository`,
+   nie `GitHubPageRepository` — ta ostatnia zostaje jako legacy/opcja referencyjna). Backend commerce
+   `sklepik` jest **zawsze**, niezależnie od tego — to się nie zmieniło.
+4. ~~Edytor mieszka jako trasa `/admin` w repo każdego sklepu.~~ **ODRZUCONE w części "repo każdego
+   sklepu" 2026-07-17** — patrz `ARCHITEKTURA.md` dla pełnej noty. Argument rozstrzygający (centralny
+   edytor nie ma czym wyrenderować sekcji customowych, bo rejestr jest per-runtime) **nadal
+   obowiązuje**, ale rozwiązaniem jest teraz jeden współdzielony runtime obsługujący wiele sklepów,
+   nie N runtime'ów (po jednym na sklep). Auth: zwykła sesja przeciw `sklepik`, nie federacyjny JWT/JWKS.
 5. **Podział treść/commerce**: sekcje treści w `component-library`, sekcje commerce to slot rejestru
-   wypełniany przez host (storefront ma warstwę danych, biblioteka nie).
+   wypełniany przez host (storefront ma warstwę danych, biblioteka nie). **Nadal aktualne** — badawczo
+   zwalidowane jako zgodne z Shopify Online Store 2.0 (dynamic sources).
 
 ## 3. BLOCKER: autoryzacja
 

@@ -1,208 +1,68 @@
-# Claude Code Rules for Spree Rails Storefront Development
+# edytor-sklepu — silnik page buildera: zasady dla agentów
 
-## Repository Structure
+## Kontekst projektu (przeczytaj najpierw)
 
-This repository contains two Rails engine gems:
-- **storefront/** (`spree_storefront`) — Rails storefront with views, controllers, helpers
-- **page_builder/** (`spree_page_builder`) — Visual page builder with models, admin UI, themes
+To repozytorium jest **silnikiem wizualnego edytora stron** dla ekosystemu Sklepik (fabryka niezależnych sklepów, backend `pawelekbyra/sklepik`, storefront `pawelekbyra/sklepikFront`). Powstało jako spike w izolacji (własne demo `apps/storefront-demo`) i udowodniło, że architektura działa — teraz jest w fazie integracji z prawdziwym storefrontem.
 
-Both gems depend on `spree_core` and `spree_admin` from the main [Spree](https://github.com/spree/spree) repository.
+**Model docelowy całego ekosystemu (decyzja właściciela 2026-07-17) to jeden, współdzielony storefront wielosklepowy** (`sklepikFront` ewoluujący w miejscu), z tym silnikiem osadzonym jako chroniona trasa `/admin` tamtej aplikacji — nie osobne repo/deployment per sklep (ten kierunek, "Store Factory", został świadomie odrzucony po dziewięciu research-passach nad wzorcami multi-tenant SaaS). Kanon tej decyzji: `pawelekbyra/sklepik/docs/plans/storefront-composition-system.md` — **przeczytaj to przed jakąkolwiek pracą integracyjną**, bo ustala kontrakt między tym repo a `sklepikFront`/`sklepik`.
 
-## General Development Guidelines
+Obowiązkowa lektura przed pracą (w tym repo):
 
-### Framework & Architecture
+- [`docs/ROADMAPA.md`](docs/ROADMAPA.md) — co zostało do integracji, otwarte pytania, pułapki środowiskowe. Zacznij tu.
+- [`docs/ARCHITEKTURA.md`](docs/ARCHITEKTURA.md) — architektura pakietów, decyzje projektowe i uzasadnienia.
+- [`docs/MACIERZ_ZGODNOSCI.md`](docs/MACIERZ_ZGODNOSCI.md) — status funkcja-po-funkcji.
+- `pawelekbyra/sklepik/docs/plans/storefront-composition-system.md` — kanon docelowej architektury całego ekosystemu (zewnętrzny, ale nadrzędny wobec decyzji w tym repo).
 
-- Spree is built on Ruby on Rails and follows MVC architecture
-- All Spree code must be namespaced under `Spree::` module
-- Follow Rails conventions and the Rails Security Guide
-- Prefer Rails idioms and standard patterns over custom solutions
+## Protokół dokumentacji (obowiązkowy)
 
-### Code Organization
+Dokumentacja ma **zawsze odzwierciedlać rzeczywisty stan projektu**. Po każdym zakończonym zadaniu, w tym samym commicie:
 
-- Place all models in `app/models/spree/` directory
-- Place all controllers in `app/controllers/spree/` directory
-- Place all views in `app/views/spree/` directory
-- Place all helpers in `app/helpers/spree/` directory
-- Place all jobs in `app/jobs/spree/` directory
-- Place all presenters in `app/presenters/spree/` directory
-- Use consistent file naming: `spree/product.rb` for `Spree::Product` class
-- Group related functionality into concerns when appropriate
-- Do not call `Spree::User` directly, use `Spree.user_class` instead
-- Do not call `Spree::AdminUser` directly, use `Spree.admin_user_class` instead
+1. Zaktualizuj [`docs/ROADMAPA.md`](docs/ROADMAPA.md) — popraw treść (co działa / co zostało), nie dopisuj dziennika zmian; historia jest w gicie.
+2. Jeśli zmieniłeś architekturę pakietów albo podjąłeś decyzję projektową — zaktualizuj [`docs/ARCHITEKTURA.md`](docs/ARCHITEKTURA.md) z krótkim uzasadnieniem.
+3. Jeśli zaimplementowałeś/zmieniłeś funkcję z macierzy — zaktualizuj jej status w [`docs/MACIERZ_ZGODNOSCI.md`](docs/MACIERZ_ZGODNOSCI.md).
+4. Jeśli decyzja wpływa na integrację z `sklepik`/`sklepikFront` (kontrakt danych, sposób montowania `/admin`, format dokumentu strony) — zgłoś to jawnie w `ROADMAPA.md` i, jeśli to zmiana fundamentalna, zaproponuj aktualizację `sklepik/docs/plans/storefront-composition-system.md` (ten dokument jest nadrzędny, nie duplikuj jego treści tutaj).
+5. Nie twórz nowych plików-notatek (handoffy, statusy). Aktualizuj istniejące dokumenty.
+6. **Przed uznaniem zadania za zakończone: sprawdź kod, nie ufaj wcześniejszym opisom.** Ten projekt już raz zebrał trzy niezależne przypadki driftu dokumentacji od kodu w jednej sesji (nieaktualny opis architektury, złe liczby testów, martwe README) — zanim napiszesz "X działa", zweryfikuj uruchomieniem testów albo przeglądarką.
 
-## Naming Conventions & Structure
+Zasady twarde: nie commituj sekretów (`.env` musi być w `.gitignore` — to już raz omal nie wyciekło); commity małe i logiczne, po polsku lub angielsku, bez detali implementacyjnych w body.
 
-### Classes & Modules
+---
 
-```ruby
-# ✅ Correct naming
-module Spree
-  class Product < Spree.base_class
-  end
-end
+## Struktura monorepo
 
-module Spree
-  module Admin
-    class ProductsController < ResourceController
-    end
-  end
-end
+pnpm workspace (bez Turborepo — świadoma decyzja, patrz `ARCHITEKTURA.md`).
 
-# ❌ Incorrect - missing namespace
-class Product < ApplicationRecord
-end
+| Katalog | Rola |
+|---|---|
+| `packages/schema` | Zod: `Page`, `Section`, `Block`, `Theme` — źródło typów dla całego silnika |
+| `packages/editor-core` | Komendy edytora, undo/redo (command pattern) |
+| `packages/persistence` | `PageRepository` i implementacje: `SQLitePageRepository`, `FilePageRepository`, `GitHubPageRepository` (ta ostatnia — legacy, budowana pod odrzucony model repo-per-sklep, patrz niżej) |
+| `packages/renderer` | Renderer drzewa sekcji, tryb `edit`/`live` |
+| `packages/component-library` | Biblioteka komponentów sekcji treści (7/14 zaimplementowanych), współdzielona między edytorem a storefrontem |
+| `apps/editor` | Next.js — canvas edytora, panel właściwości generowany z Zod |
+| `apps/storefront-demo` | Dowód round-tripu (JSON → renderer → strona) — demo w izolacji, docelowo zastępowane integracją z prawdziwym `sklepikFront` |
+
+Nazwy pakietów dziś: `@editor/*`. Docelowo (po integracji): `@sklepik/*`, publikowane jako wersjonowane paczki konsumowane przez `sklepikFront` — nie fizyczny merge repozytoriów (uzasadnienie w `storefront-composition-system.md`: wersjonowane paczki pozwalają aktualizować silnik bez ręcznego patchowania).
+
+## Ważne: co jest legacy
+
+`packages/persistence`'s `GitHubPageRepository` (git-based CMS, commit-per-publikacja) był budowany pod odrzucony model "repo per sklep". W modelu docelowym dokumenty stron żyją w bazie `sklepik`, scoped po `store_id` (nowa implementacja `PageRepository`, robocza nazwa `SklepikPageRepository`, po stronie `sklepik`). `GitHubPageRepository` zostaje w kodzie jako działająca, przetestowana opcja/materiał referencyjny — nie rozwijać dalej jako główną ścieżkę integracji.
+
+## Development
+
+```bash
+pnpm install
+pnpm --filter @editor/app dev       # canvas edytora, localhost:3100
+pnpm --filter @editor/storefront-demo dev  # demo storefrontu, localhost:3200
+pnpm test        # wszystkie pakiety (Vitest)
+pnpm typecheck    # wszystkie pakiety
 ```
 
-Always inherit from `Spree.base_class` when creating models.
+Zawsze uruchamiaj testy i typecheck przed commitem. Dla zmian widocznych w przeglądarce (canvas, tryb podglądu) — zweryfikuj w przeglądarce, nie tylko testami; ten projekt ma historię błędów, które testy jednostkowe przepuściły (np. rozjazd renderowania edytor/storefront wykryty tylko przez ręczną weryfikację w przeglądarce).
 
-### File Paths
+## Konwencje kodu
 
-- Models: `app/models/spree/page.rb`
-- Controllers: `app/controllers/spree/admin/pages_controller.rb`
-- Views: `app/views/spree/admin/pages/`
-- Decorators: `app/models/spree/page_builder/store_decorator.rb`
-
-## Storefront Development
-
-### Controller Inheritance
-
-- Storefront controllers inherit from `Spree::StoreController`
-- Admin controllers (page_builder) inherit from `Spree::Admin::ResourceController`
-
-### Frontend Stack
-
-- **Tailwind CSS v4** — Responsive, mobile-first design
-- **Turbo / Hotwire** — Fast, SPA-like navigation
-- **StimulusJS** — JavaScript controllers for interactivity
-- **Importmaps** — No Node.js required
-
-### Views & Templates
-
-- Page section partials live in `storefront/app/views/themes/default/spree/page_sections/`
-- Use `render_page(current_page)` to render page builder pages
-- Use `render_section(section)` to render individual sections
-- Use `page_builder_enabled?` to check if in preview/edit mode
-- Use `cache_unless page_builder_enabled?` to skip caching in edit mode
-
-### Helpers
-
-- `storefront/app/helpers/spree/page_helper.rb` — Page/section rendering logic
-- `storefront/app/helpers/spree/theme_helper.rb` — Theme data access, preview support
-
-## Page Builder Development
-
-### Models
-
-Key models (all in `page_builder/app/models/spree/`):
-- `Spree::Page` — Represents a page (14 types: Homepage, Cart, ProductDetails, etc.)
-- `Spree::Theme` — Theme management with multiple themes per store
-- `Spree::PageSection` — Sections within a page (23 types)
-- `Spree::PageBlock` — Blocks within a section (16+ types)
-- `Spree::PageLink` — Navigation links within blocks
-
-### Decorators
-
-Page builder extends core models via decorators in `page_builder/app/models/spree/page_builder/`:
-- `store_decorator.rb` — Adds page/theme associations to `Spree::Store`
-- `product_decorator.rb` — Adds `Spree::Linkable` to `Spree::Product`
-- `taxon_decorator.rb` — Adds `Spree::Linkable` to `Spree::Taxon`
-- `policy_decorator.rb` — Adds `Spree::Linkable` to `Spree::Policy`
-
-### Extensibility
-
-Page builder provides registries for custom components:
-```ruby
-Spree.themes           # Register custom themes
-Spree.pages            # Register custom page types
-Spree.page_sections    # Register custom section types
-Spree.page_blocks      # Register custom block types
-```
-
-### Admin Navigation
-
-Register navigation items in `page_builder/config/initializers/spree_admin_navigation.rb`.
-
-## Model Development
-
-### Model Patterns
-
-- Use ActiveRecord associations appropriately, always pass `class_name` and `dependent` options
-- Implement concerns for shared functionality
-- Use scopes for reusable query patterns
-- Don't use enums, use string columns instead
-- Don't ever cast IDs to integer, we need to support also UUIDs so please always treat IDs as strings
-
-For uniqueness validation, always use `scope: spree_base_uniqueness_scope`
-
-## Database & Migrations
-
-### Migration Patterns
-
-- Follow Rails migration conventions
-- Use proper indexing for performance
-- Do not include foreign key constraints
-- Try to limit number of migrations to 1 per feature
-- Always add `null: false` to required columns
-- By default add `deleted_at` column to all tables that have soft delete functionality (we use `paranoia` gem)
-- For migrations please use 7.2 as the target version as we still support Rails 7.2
-- All page_builder migrations live in `page_builder/db/migrate/`
-- Storefront has no migrations (uses page_builder tables)
-
-## Testing
-
-Always run tests before committing changes. Always run tests after making changes.
-
-### Test Application
-
-To run tests you need to create test app with `bundle exec rake test_app` in each gem directory.
-
-This will create a dummy Rails application and run migrations. If there's already a dummy app in the gem directory, you can skip this step.
-
-### Test Structure
-
-- Use RSpec for testing and Factory Bot for creating test data
-- As much as you can use `build` vs `create` for factories to speed up tests
-- Be very pragmatic, don't over-engineer tests, don't repeat same tests in multiple places
-- For controller specs always add `render_views` to the test
-- For controller spec authentication use `stub_authorization!`
-- Don't create test scenarios for standard Rails validation, only for custom validations
-- For time-based testing use `Timecop` gem
-
-```ruby
-# Run storefront tests
-cd storefront && bundle exec rake test_app && bundle exec rspec
-
-# Run page_builder tests
-cd page_builder && bundle exec rake test_app && bundle exec rspec
-```
-
-## Security
-
-- Follow Rails Security Guide principles
-- Implement proper authorization checks with CanCanCan
-- Validate all user inputs
-- Never permit mass assignment without validation
-- Use allowlists, not blocklists for parameters
-
-## Performance
-
-- We're using `ar_lazy_preload` gem to avoid N+1 queries, also use `includes`/`preload`
-- Use Rails caching mechanisms via `Rails.cache`
-- Consider fragment caching for views
-- Use `cache_key_with_version` when constructing custom cache keys
-
-## Routes
-
-- Always use `spree.` routes engine when using routes in views and controllers
-
-## Internationalization
-
-- Use `Spree.t` for translations
-- Keep storefront translations in `storefront/config/locales/en.yml`
-- Keep page_builder admin translations in `page_builder/config/locales/en.yml` (if applicable)
-- Do not repeat translations in multiple files
-
-## Version Management
-
-- Both gems share a version defined in `lib/spree_storefront/version.rb`
-- Update `SpreeStorefront::VERSION` when releasing
+- Zero komentarzy poza nietrywialnymi przypadkami (ukryte ograniczenie, obejście konkretnego buga) — nazwy identyfikatorów mają mówić co, nie komentarz.
+- Schema Zod (`packages/schema`) jest źródłem prawdy dla kształtu danych — nie duplikuj typów ręcznie w innych pakietach.
+- Komponenty w `component-library` **nie mogą mieć `'use client'` ani handlerów zdarzeń** — muszą działać zarówno jako Server Components (storefront), jak i wewnątrz drzewa klienta (canvas edytora). Wyjątek: klasy (np. error boundary) wymagają `'use client'` jawnie — to już raz zablokowało import całego renderera do Server Component, sprawdzaj to przy każdej nowej klasie w tym pakiecie.
+- Sekcje commerce (`product_grid`, `category_grid`) to sloty rejestru wypełniane danymi przez hosta (storefront), nie przez samą bibliotekę — biblioteka nie zna Store API `sklepik`.

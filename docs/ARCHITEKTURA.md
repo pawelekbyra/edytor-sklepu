@@ -245,9 +245,28 @@ edycja jest odrzucana, nie po cichu nadpisywana). Przełączenie edytora z trybu
 produkcyjny to **wyłącznie zmienne środowiskowe** (`apps/editor/.env.example`) — żaden kod canvasu,
 komend ani renderera o tym nie wie. To właśnie po to jest ta abstrakcja.
 
-## Gdzie mieszka edytor: trasa `/admin` w repo każdego sklepu
+## Gdzie mieszka edytor: trasa `/admin` w jednej współdzielonej aplikacji (zaktualizowane 2026-07-17)
 
-**Decyzja właściciela (2026-07-16).** Edytor jest dystrybuowany jako wersjonowany pakiet
+**UCHYLONE w części "repo każdego sklepu" — patrz nota niżej.** Sekcja poniżej opisuje decyzję
+z 2026-07-16 ("edytor w repo każdego sklepu") w wersji historycznej. Argumenty o dystrybucji jako
+wersjonowany pakiet i o współdzielonym runtime dla sekcji customowych **pozostają trafne i aktualne**
+— zmienia się tylko to, gdzie żyje ten jeden, wspólny runtime.
+
+**Nota o zmianie (2026-07-17):** właściciel odrzucił model "osobne repo/deployment per sklep"
+(decyzja w `pawelekbyra/sklepik/docs/plans/storefront-composition-system.md`, kanon). Edytor nadal
+jest dystrybuowany jako wersjonowany pakiet (`@sklepik/page-builder`, docelowa nazwa — dziś `@editor/*`)
+i montowany jako trasa `/admin` — ale w **jednej, współdzielonej aplikacji `sklepikFront` obsługującej
+wiele sklepów** (routing po domenie/`store_id`), nie w osobnym repo każdego sklepu. Argument
+rozstrzygający z sekcji niżej (centralny edytor nie ma czym wyrenderować sekcji customowych sklepu,
+bo rejestr jest per-runtime) **nadal obowiązuje i nadal uzasadnia współdzielony runtime** — różnica
+jest w tym, że "współdzielony runtime" oznacza dziś jedną aplikację wielosklepową, a nie N aplikacji
+per sklep. Auth też się upraszcza: zwykła sesja przeciw `RoleUser`+`store_id` w `sklepik`, nie
+federacyjny JWT/JWKS między niezależnymi deploymentami (to ostatnie było potrzebne tylko przy
+modelu repo-per-sklep).
+
+### Wersja historyczna (2026-07-16, częściowo nieaktualna — patrz nota wyżej)
+
+Edytor jest dystrybuowany jako wersjonowany pakiet
 (`@sklepik/page-builder`) i montowany jako trasa `/admin` w aplikacji każdego sklepu — nie jako
 centralna aplikacja platformy. Właściciel loguje się „do swojego sklepu" i tam edytuje.
 
