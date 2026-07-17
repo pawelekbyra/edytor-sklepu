@@ -1,12 +1,17 @@
 name: Release
 
-# Changesets' standard two-step flow — nothing publishes on a plain push:
+# Changesets' two-step flow gates every VERSION BUMP behind a reviewable PR:
 #   1. A push to main with pending changesets (.changeset/*.md, not config.json/README.md)
 #      opens/updates a "Version Packages" PR that bumps versions and updates changelogs.
 #   2. Only merging THAT PR runs this workflow again with no pending changesets left, which
-#      is when `changesets/action` actually runs `pnpm -r publish` for real.
-# So setting this up does not publish anything by itself — a changeset must be authored and
-# its version PR merged first, both deliberate, reviewable steps.
+#      is when `changesets/action` runs `pnpm -r publish` and actually ships the new version.
+#
+# CORRECTION (2026-07-17, learned the hard way): this gate does NOT cover the very first
+# publish of a package. With no prior git tag to compare against, `changeset publish` treats
+# the package's current version as unpublished and ships it immediately on the first run that
+# reaches this step — no changeset needed. That's what happened when this workflow first ran:
+# all 5 packages published at 0.0.1 on the very first push, before any changeset existed.
+# Every publish AFTER that first one does go through the PR gate described above.
 on:
   push:
     branches: [main]
