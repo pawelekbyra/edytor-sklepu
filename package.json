@@ -2,6 +2,7 @@
   "name": "edytor-sklepu-monorepo",
   "private": true,
   "description": "TypeScript, React and Next.js rewrite of the visual page and theme editor for the sklepik ecosystem.",
+  "packageManager": "pnpm@11.12.0",
   "scripts": {
     "build": "pnpm -r --if-present run build",
     "test": "pnpm -r --if-present run test",
